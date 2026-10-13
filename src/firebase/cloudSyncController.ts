@@ -9,7 +9,26 @@ const AUTO_SYNC_DEBOUNCE_MS = 8000;
 
 let started = false;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+// The backend is scoped to one signed-in user's own data (see
+// cloudBackend.ts), so it's cached per-uid here rather than as a single
+// shared promise — switching users (sign out, sign in as someone else)
+// must get a fresh backend pointed at the new uid's own documents, never
+// keep reusing the previous person's.
+let currentUid: string | null = null;
 let backendPromise: Promise<CloudBackend> | null = null;
+let backendUid: string | null = null;
+
+function getBackend(): Promise<CloudBackend> {
+  if (!currentUid) {
+    return Promise.reject(new Error("Not signed in."));
+  }
+  if (!backendPromise || backendUid !== currentUid) {
+    backendUid = currentUid;
+    backendPromise = getFirestoreCloudBackend(currentUid);
+  }
+  return backendPromise;
+}
 
 async function buildLocalSnapshotFromStore() {
   const s = useAppStore.getState();
@@ -24,7 +43,7 @@ async function buildLocalSnapshotFromStore() {
 
 async function runSyncNow(): Promise<void> {
   try {
-    const backend = await (backendPromise ?? (backendPromise = getFirestoreCloudBackend()));
+    const backend = await getBackend();
     const s = useAppStore.getState();
     s.setCloudStatus("syncing");
 
@@ -112,6 +131,7 @@ export function startCloudSync(): void {
   started = true;
 
   subscribeToAuthState(async (user) => {
+    currentUid = user?.uid ?? null;
     useAppStore.getState().setCloudUserEmail(user?.email ?? null);
     if (user) {
       await runSyncNow();
@@ -136,7 +156,7 @@ export function startCloudSync(): void {
 }
 
 export async function manualCloudSave(): Promise<void> {
-  const backend = await (backendPromise ?? (backendPromise = getFirestoreCloudBackend()));
+  const backend = await getBackend();
   const snapshot = await buildLocalSnapshotFromStore();
   useAppStore.getState().setCloudStatus("syncing");
   try {
@@ -155,7 +175,7 @@ export async function manualCloudSave(): Promise<void> {
 }
 
 export async function manualCloudLoad(): Promise<void> {
-  const backend = await (backendPromise ?? (backendPromise = getFirestoreCloudBackend()));
+  const backend = await getBackend();
   useAppStore.getState().setCloudStatus("syncing");
   try {
     const cloudSnapshot = await backend.readMainSnapshot();
@@ -178,7 +198,7 @@ export async function manualCloudLoad(): Promise<void> {
 /** Lists "Latest Cloud" plus every daily history snapshot, newest first —
  * for the restore-source picker. */
 export async function listRestoreSources(): Promise<HistoryEntry[]> {
-  const backend = await (backendPromise ?? (backendPromise = getFirestoreCloudBackend()));
+  const backend = await getBackend();
   const [main, history] = await Promise.all([backend.readMainSnapshot(), backend.listHistory()]);
   const entries: HistoryEntry[] = [];
   if (main) {
@@ -191,7 +211,7 @@ export async function listRestoreSources(): Promise<HistoryEntry[]> {
 /** Restores local data from a specific restore source (either "latest" or
  * a history entry's date-based id). */
 export async function restoreFromSource(id: string): Promise<void> {
-  const backend = await (backendPromise ?? (backendPromise = getFirestoreCloudBackend()));
+  const backend = await getBackend();
   useAppStore.getState().setCloudStatus("syncing");
   try {
     const snapshot = id === "latest" ? await backend.readMainSnapshot() : await backend.readHistorySnapshot(id);
@@ -214,7 +234,7 @@ export async function restoreFromSource(id: string): Promise<void> {
 export async function resolveCloudConflict(choice: "keep-local" | "use-cloud"): Promise<void> {
   const conflict = useAppStore.getState().cloudConflict;
   if (!conflict) return;
-  const backend = await (backendPromise ?? (backendPromise = getFirestoreCloudBackend()));
+  const backend = await getBackend();
 
   const outcome = await applyCloudSyncChoice(backend, choice, conflict.local);
   if (outcome.decision === "pull") {

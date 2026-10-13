@@ -6,6 +6,7 @@
 
 export interface AuthUser {
   email: string | null;
+  uid: string;
 }
 
 export async function subscribeToAuthState(
@@ -15,7 +16,7 @@ export async function subscribeToAuthState(
   const { getFirebaseApp } = await import("./config");
   const auth = getAuth(getFirebaseApp());
   return onAuthStateChanged(auth, (user) => {
-    callback(user ? { email: user.email } : null);
+    callback(user ? { email: user.email, uid: user.uid } : null);
   });
 }
 

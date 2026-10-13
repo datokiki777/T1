@@ -58,27 +58,31 @@ export function createInMemoryCloudBackend(initial: CloudSnapshot | null = null)
   };
 }
 
-let firestoreBackendPromise: Promise<CloudBackend> | null = null;
-
 /**
- * Lazily creates the real Firestore-backed CloudBackend. Firebase itself
- * is only imported here (dynamic import), so nothing about the sync
- * engine's logic depends on the SDK being present — useful for tests and
- * for keeping it out of the main bundle until it's actually needed.
+ * Creates the real Firestore-backed CloudBackend, scoped to one signed-in
+ * user's own data (users/{uid}/backups/main, users/{uid}/backups_history)
+ * — every person who signs in gets their own, completely separate cloud
+ * storage; Firestore Security Rules enforce that a user can only ever
+ * read/write their own uid's documents, so this isn't just a convention,
+ * it's actually unreachable otherwise. Firebase itself is only imported
+ * here (dynamic import), so nothing about the sync engine's logic depends
+ * on the SDK being present — useful for tests and for keeping it out of
+ * the main bundle until it's actually needed. Not cached here (the
+ * caller is responsible for that) since the right backend instance
+ * depends on *which* uid is currently signed in, which can change across
+ * a session (sign out, sign in as someone else).
  */
-export function getFirestoreCloudBackend(): Promise<CloudBackend> {
-  if (!firestoreBackendPromise) {
-    firestoreBackendPromise = (async () => {
-      const { getFirebaseApp } = await import("./config");
-      const { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, orderBy, limit } =
-        await import("firebase/firestore");
+export async function getFirestoreCloudBackend(uid: string): Promise<CloudBackend> {
+  const { getFirebaseApp } = await import("./config");
+  const { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, orderBy, limit } =
+    await import("firebase/firestore");
 
-      const app = getFirebaseApp();
-      const firestore = getFirestore(app);
-      const mainDocRef = doc(firestore, "backups", "main");
-      const historyCollection = collection(firestore, "backups_history");
+  const app = getFirebaseApp();
+  const firestore = getFirestore(app);
+  const mainDocRef = doc(firestore, "users", uid, "backups", "main");
+  const historyCollection = collection(firestore, "users", uid, "backups_history");
 
-      return {
+  return {
         async readMainSnapshot() {
           const snap = await getDoc(mainDocRef);
           if (!snap.exists()) return null;
@@ -116,8 +120,5 @@ export function getFirestoreCloudBackend(): Promise<CloudBackend> {
           const data = snap.data();
           return (data?.data ?? null) as CloudSnapshot | null;
         },
-      } satisfies CloudBackend;
-    })();
-  }
-  return firestoreBackendPromise;
+  } satisfies CloudBackend;
 }
