@@ -1,0 +1,118 @@
+.wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.switcherBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-md);
+  font-weight: 600;
+  box-shadow: var(--shadow-card);
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.switcherIcon {
+  font-size: 13px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.switcherCarTag {
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.menuPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Review mode: this menu is browse-only — add/rename/archive/delete and
+   the rate/salary fields are disabled, so fade the whole panel to signal
+   that at a glance. */
+.menuPanelDimmed {
+  opacity: 0.5;
+}
+
+.row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.settingsRow {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.settingsField {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.settingsField input {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-md);
+  width: 108px;
+}
+
+.settingsField input:disabled {
+  opacity: 0.4;
+}
+
+.btn {
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-md);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btnDanger {
+  composes: btn;
+  border-color: rgba(255, 107, 107, 0.4);
+  color: var(--danger);
+}

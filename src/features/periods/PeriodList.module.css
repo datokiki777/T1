@@ -1,0 +1,32 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Room for the fixed "+ New Customer" FAB so it never covers the last
+     period card's Total row. */
+  padding-bottom: 84px;
+}
+
+.placeholder {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-radius: 12px;
+}
+
+.fab {
+  position: fixed;
+  right: var(--space-6);
+  bottom: 76px;
+  z-index: 500;
+  background: var(--accent);
+  color: #071633;
+  font-weight: 700;
+  border: none;
+  padding: 12px 20px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(255, 196, 64, 0.21);
+  white-space: nowrap;
+}

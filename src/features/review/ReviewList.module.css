@@ -1,0 +1,432 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.emptyCard {
+  padding: 50px 20px;
+  text-align: center;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+}
+
+.emptyIcon {
+  font-size: 48px;
+  opacity: 0.6;
+  margin-bottom: var(--space-5);
+}
+
+.emptyTitle {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.emptyHint {
+  font-size: var(--font-md);
+  opacity: 0.55;
+  margin-top: var(--space-3);
+}
+
+/* Green accent line on the left, matching the old app's group cards. */
+.groupCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--success);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.groupToggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  background: transparent;
+  border: none;
+  padding: var(--space-4) var(--space-5);
+  cursor: pointer;
+  text-align: left;
+}
+
+.groupHeadMain {
+  min-width: 0;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.groupMeta {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.groupBadges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.countBadge {
+  min-width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--success);
+  color: #071633;
+  font-weight: 700;
+  font-size: var(--font-md);
+}
+
+.badgeDone,
+.badgeFail,
+.badgeFixed,
+.badgeWrong {
+  min-width: 20px;
+  text-align: center;
+  border-radius: var(--radius-pill);
+  padding: 2px 6px;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: #071633;
+}
+.badgeDone { background: var(--success); }
+.badgeFail { background: var(--danger); }
+.badgeFixed { background: var(--accent); }
+.badgeWrong { background: #b892ff; }
+
+.chevron {
+  color: var(--text-muted);
+}
+
+.groupBody {
+  padding: 0 var(--space-5) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Compact horizontal rows (label left, value right, thin colored
+   underline) instead of boxed KPI tiles — matches the old app. */
+.groupKpis {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.kpi {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid var(--kpi-accent, var(--border-soft));
+}
+
+.kpiGross {
+  --kpi-accent: var(--info);
+}
+.kpiNet {
+  --kpi-accent: var(--success);
+}
+.kpiMy {
+  --kpi-accent: var(--accent);
+}
+
+.kpiLabel {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpiValue {
+  font-size: var(--font-lg);
+  font-weight: 700;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: var(--font-md);
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.periodCard {
+  background: var(--surface-3);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.periodSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+  flex-wrap: wrap;
+  transition: background 0.1s ease;
+  border-radius: var(--radius-sm);
+}
+
+/* The period that contains today's date — same subtle "this is the one
+   running right now" cue as Edit mode's period header. */
+.periodSummaryCurrent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+  flex-wrap: wrap;
+  transition: background 0.1s ease;
+  border-radius: var(--radius-sm);
+  background: rgba(53, 208, 127, 0.1);
+  border-left: 3px solid var(--success);
+}
+
+.periodSummary:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.periodSummary::-webkit-details-marker {
+  display: none;
+}
+
+.periodRange {
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.periodMini {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.periodSums {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px;
+  font-size: var(--font-xs);
+  white-space: nowrap;
+}
+
+/* Paid-weeks indicator: soft red if the recorded paid weeks fall short of
+   how many weeks the period's own date range actually spans, soft green
+   once it's fully covered. */
+.badgePaid,
+.badgeUnpaid {
+  border-radius: var(--radius-pill);
+  padding: 2px 9px;
+  font-size: var(--font-xs);
+  white-space: nowrap;
+  border: 1px solid;
+}
+
+.badgePaid {
+  background: rgba(53, 208, 127, 0.14);
+  border-color: rgba(53, 208, 127, 0.4);
+  color: #8de8b3;
+}
+
+.badgeUnpaid {
+  background: rgba(255, 107, 107, 0.14);
+  border-color: rgba(255, 107, 107, 0.4);
+  color: #ff9d9d;
+}
+
+.clientList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.clientItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  flex-wrap: wrap;
+  /* Long-press here jumps to the client in Edit mode — these two
+     properties stop the browser's own touch-and-hold text-selection/
+     context-menu gesture from firing at roughly the same threshold and
+     canceling the custom press (a real, easy-to-miss mobile gotcha). */
+  touch-action: manipulation;
+  user-select: none;
+  cursor: pointer;
+}
+
+.clientMain {
+  min-width: 0;
+  flex: 1;
+}
+
+.clientNameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.visitIcon,
+.visitIconSet {
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  line-height: 1;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.visitIconSet {
+  background: rgba(255, 196, 64, 0.14);
+  border-color: var(--accent);
+}
+
+.visitModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: var(--space-6);
+}
+
+.visitModalCard {
+  width: 100%;
+  max-width: 320px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.visitModalTitle {
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.visitModalBody {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.visitModalEmpty {
+  font-size: var(--font-md);
+  color: var(--text-muted);
+}
+
+.visitModalClose {
+  background: var(--accent);
+  border: none;
+  color: #071633;
+  padding: 9px 18px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: var(--font-md);
+  cursor: pointer;
+  align-self: center;
+}
+
+.clientName {
+  font-weight: 600;
+  font-size: var(--font-md);
+}
+
+.clientCity {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.clientCityLink {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.clientCityLink:active {
+  opacity: 0.7;
+}
+
+.clientComment {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: var(--space-1);
+}
+
+.clientValues {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-sm);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.status_done,
+.status_fail,
+.status_fixed,
+.status_wrong {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  padding: 1px 7px;
+  color: #071633;
+}
+.status_done { background: var(--success); }
+.status_fail { background: var(--danger); }
+.status_fixed { background: var(--accent); }
+.status_wrong { background: #b892ff; }
+
+@media (max-width: 480px) {
+  .clientItem {
+    flex-direction: column;
+  }
+
+  .clientValues {
+    flex-direction: row;
+    gap: var(--space-5);
+    text-align: left;
+  }
+}

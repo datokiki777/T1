@@ -1,0 +1,257 @@
+.customerCell {
+  min-width: 190px;
+}
+
+.input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-md);
+}
+
+/* Comment accordion trigger: icon + "Comment" label + live state + chevron,
+   matching the old app's foldable comment row exactly. */
+.commentRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  background: transparent;
+  border: none;
+  padding: 2px 2px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.commentIcon {
+  color: var(--success);
+  font-size: var(--font-sm);
+}
+
+.commentLabel {
+  color: var(--text);
+  font-weight: 600;
+  font-size: var(--font-sm);
+}
+
+.commentStateEmpty {
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+}
+
+.commentStateSaved {
+  color: var(--success);
+  font-weight: 600;
+  font-size: var(--font-sm);
+}
+
+.commentChevron {
+  margin-left: auto;
+  color: var(--text-muted);
+}
+
+.commentInput {
+  width: 100%;
+  margin-top: 4px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  font-size: var(--font-sm);
+  resize: vertical;
+}
+
+.actionsCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.moveButtons {
+  display: flex;
+  gap: 2px;
+}
+
+.visitBtn,
+.visitBtnSet {
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Filled in (date and/or days already set) — a small visual cue so you
+   can tell at a glance which clients already have this recorded. */
+.visitBtnSet {
+  background: rgba(255, 196, 64, 0.14);
+  border-color: var(--accent);
+}
+
+.visitPanelRow td {
+  padding: 0 var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.visitPanel {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+}
+
+.visitPanelField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+.visitPanelField input {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 7px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-sm);
+}
+
+.visitDayButtons {
+  display: flex;
+  gap: 4px;
+}
+
+.visitDayBtn,
+.visitDayBtnActive {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+}
+
+.visitDayBtnActive {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1a1a1a;
+}
+
+.visitPanelClose {
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+
+.moveBtn {
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-xs);
+  line-height: 1;
+}
+
+.moveBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.removeBtn {
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  white-space: nowrap;
+}
+
+.status_none,
+.status_done,
+.status_fail,
+.status_fixed,
+.status_wrong {
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-size: var(--font-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  color: #071633;
+  font-weight: 700;
+}
+
+.status_none {
+  background: var(--surface-3);
+  color: var(--text-muted);
+}
+.status_done {
+  background: var(--success);
+}
+.status_fail {
+  background: var(--danger);
+}
+.status_fixed {
+  background: var(--accent);
+}
+.status_wrong {
+  background: #b892ff;
+}
+
+.wrongRow {
+  opacity: 0.55;
+}
+
+/* Subtle accent bar down the left edge of every row, matching the old
+   app's client-row style. */
+tr[data-row-id] td:first-child {
+  border-left: 3px solid var(--border-soft);
+}
+
+.highlighted {
+  animation: rowHighlight 3.5s ease-out;
+}
+
+@keyframes rowHighlight {
+  0% {
+    background: rgba(255, 196, 64, 0.65);
+  }
+  55% {
+    background: rgba(255, 196, 64, 0.65);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.wrongRow .input,
+.wrongRow .status_wrong {
+  text-decoration: line-through;
+}

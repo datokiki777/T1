@@ -1,0 +1,99 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: var(--space-6);
+  animation: fadeIn 0.12s ease-out;
+}
+
+.card {
+  width: 100%;
+  max-width: 340px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  animation: popIn 0.14s ease-out;
+}
+
+.message {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--font-base);
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.promptInput {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-base);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.cancelBtn,
+.confirmBtn,
+.confirmBtnDanger {
+  padding: 9px 18px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: var(--font-md);
+  cursor: pointer;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  order: 1;
+}
+
+.confirmBtn {
+  background: var(--accent);
+  border: none;
+  color: #071633;
+  order: 2;
+}
+
+.confirmBtnDanger {
+  background: var(--danger);
+  border: none;
+  color: #2a0505;
+  order: 2;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

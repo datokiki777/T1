@@ -1,0 +1,102 @@
+:root {
+  color-scheme: dark;
+
+  /* Colors — slightly lightened from the original (per explicit request:
+     the near-black background was hard to read in bright light), still
+     dark-only. */
+  --surface-1: #0d2342;
+  --surface-2: #17304f;
+  --surface-3: #1f3a63;
+  --surface-glass: rgba(20, 42, 77, 0.74);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-soft: rgba(255, 255, 255, 0.06);
+  --text: #f5f7fb;
+  --text-muted: rgba(245, 247, 251, 0.6);
+  --text-faint: rgba(245, 247, 251, 0.4);
+  --accent: #ffc440;
+  --accent-soft: rgba(255, 196, 64, 0.15);
+  --danger: #ff6b6b;
+  --success: #35d07f;
+  --info: #7aa2ff;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 10px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --space-7: 20px;
+
+  /* Radius scale — old app leans pill/rounded everywhere */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 6px 18px rgba(0, 0, 0, 0.28);
+  --shadow-pop: 0 10px 30px rgba(0, 0, 0, 0.4);
+
+  /* Typography */
+  --font-xs: 11px;
+  --font-sm: 12px;
+  --font-md: 13px;
+  --font-base: 14px;
+  --font-lg: 16px;
+  --font-xl: 20px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--surface-1);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button {
+  font-family: inherit;
+}
+
+button,
+[role="button"],
+input,
+select,
+textarea,
+label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, [role="button"], input, select, textarea):focus:not(:focus-visible) {
+  outline: none;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Privacy toggle (top bar, 🙈/👁️ button): blurs every money amount in
+   the app without touching layout — the text stays exactly where it
+   is (unlike replacing it with "••••", which would change width and
+   make things jump around) and no financial values leak into
+   screenshots/screen-recordings taken while it's on. Plain global
+   class (not CSS-module-scoped) since .js-money is applied across many
+   different components/modules that all need to respond to one single
+   toggle. */
+.amounts-hidden .js-money {
+  filter: blur(6px);
+  transition: filter 0.15s ease;
+  user-select: none;
+}

@@ -1,0 +1,114 @@
+.panel {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stats {
+  display: flex;
+  gap: var(--space-5);
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.messageSuccess,
+.messageError {
+  font-size: var(--font-md);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+}
+
+.messageSuccess {
+  color: var(--success);
+  border-color: var(--success);
+  background: rgba(53, 208, 127, 0.1);
+}
+
+.messageError {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.btnPrimary,
+.btn,
+.pillGreen,
+.pillAmber,
+.pillCoral {
+  flex: 1;
+  min-width: 130px;
+}
+
+.btnPrimary:disabled,
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: var(--accent);
+  color: #071633;
+  border: none;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn {
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+/* Soft, muted tints so each export/import action is visually distinct
+   without any of them being bright/saturated enough to strain the eye. */
+.pillGreen,
+.pillAmber,
+.pillCoral {
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--tint-bg);
+  color: var(--tint-fg);
+  border: 1px solid var(--tint-border);
+}
+
+.pillGreen:disabled,
+.pillAmber:disabled,
+.pillCoral:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pillGreen {
+  --tint-bg: rgba(53, 208, 127, 0.16);
+  --tint-fg: #9be8bd;
+  --tint-border: rgba(53, 208, 127, 0.35);
+}
+
+.pillAmber {
+  --tint-bg: rgba(255, 196, 64, 0.16);
+  --tint-fg: #f0d18f;
+  --tint-border: rgba(255, 196, 64, 0.35);
+}
+
+.pillCoral {
+  --tint-bg: rgba(255, 138, 138, 0.16);
+  --tint-fg: #ffb8b8;
+  --tint-border: rgba(255, 138, 138, 0.35);
+}

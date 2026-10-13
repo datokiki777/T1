@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "eu.dbuilder.reacttotals",
+        "sha256_cert_fingerprints": ["7F:27:A1:0C:3C:BD:C2:61:9E:57:B3:58:40:1D:D9:9F:99:84:C0:FB:2B:E7:B7:82:4C:77:CC:55:4B:9E:28:42"]
+      }
+    }]

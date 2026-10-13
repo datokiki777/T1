@@ -1,0 +1,400 @@
+.card {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(23, 139, 177, 0.16), transparent 32%),
+    linear-gradient(135deg, rgba(11, 42, 70, 0.92), rgba(13, 35, 72, 0.92));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(106, 181, 221, 0.16);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 14px 30px rgba(0, 0, 0, 0.26);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.titleBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  cursor: pointer;
+  padding: 6px 10px;
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.titleBtn:active {
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.chevron {
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+}
+
+.title {
+  font-weight: 700;
+  font-size: var(--font-base);
+}
+
+.toggle {
+  display: flex;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+}
+
+.toggleBtn,
+.toggleBtnActive {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-sm);
+}
+
+/* Same yellow accent as the Active/Edit tabs — kept consistent everywhere
+   a pill toggle has a selected state, rather than a separate blue tint. */
+.toggleBtnActive {
+  background: var(--accent);
+  color: #071633;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(255, 196, 64, 0.18);
+}
+
+/* Gross / Net / My € always sit on one compact horizontal row — never
+   stacked, never oversized. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.kpi {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border-radius: var(--radius-sm);
+  padding: 7px 4px 6px;
+  text-align: center;
+  border: 1px solid var(--border-soft);
+  border-bottom: 2px solid var(--kpi-accent, var(--border-soft));
+  min-width: 0;
+}
+
+.kpiGross {
+  --kpi-accent: var(--info);
+}
+.kpiNet {
+  --kpi-accent: var(--success);
+}
+.kpiMy {
+  --kpi-accent: var(--accent);
+}
+
+.label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pillRow {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.pill {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+.pill b {
+  color: var(--text);
+  font-size: var(--font-base);
+}
+
+.statusRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+}
+
+.badgeDone,
+.badgeFail,
+.badgeFixed,
+.badgeWrong,
+.badgeDoneActive,
+.badgeFailActive,
+.badgeFixedActive,
+.badgeWrongActive {
+  min-width: 26px;
+  text-align: center;
+  border-radius: var(--radius-pill);
+  padding: 2px 9px;
+  font-weight: 700;
+  font-size: var(--font-sm);
+  color: #071633;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.badgeDone,
+.badgeDoneActive {
+  background: var(--success);
+}
+.badgeFail,
+.badgeFailActive {
+  background: var(--danger);
+}
+.badgeFixed,
+.badgeFixedActive {
+  background: var(--accent);
+}
+.badgeWrong,
+.badgeWrongActive {
+  background: #b892ff;
+}
+
+.badgeDoneActive,
+.badgeFailActive,
+.badgeFixedActive,
+.badgeWrongActive {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
+}
+
+.filteredList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.filteredEmpty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-sm);
+  padding: var(--space-4);
+}
+
+.filteredItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+}
+
+.filteredItem:hover {
+  border-color: var(--accent);
+}
+
+.filteredName {
+  font-weight: 600;
+  font-size: var(--font-md);
+}
+
+.filteredComment {
+  font-size: var(--font-sm);
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.filteredMeta {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.dateBox {
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+.dateLabel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dateBadges {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.durationBadge {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  font-size: var(--font-xs);
+  white-space: nowrap;
+}
+
+.dateValue {
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.monthly {
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+}
+
+.monthlyHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-md);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.monthNav button {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  border-radius: var(--radius-pill);
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.monthNav button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.monthlyGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: var(--font-md);
+}
+
+.monthRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (max-width: 480px) {
+  .pillRow {
+    flex-direction: column;
+  }
+
+  /* Extra-narrow phones: trim the KPI row a little further so three
+     capsules still comfortably fit on one line. */
+  .kpi {
+    padding: 6px 2px 5px;
+  }
+
+  .label {
+    font-size: 9px;
+  }
+
+  .value {
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 560px) {
+  .grid {
+    gap: 10px;
+  }
+
+  .kpi {
+    padding: 10px 12px 9px;
+  }
+
+  .label {
+    font-size: 11px;
+  }
+
+  .value {
+    font-size: 18px;
+  }
+}
