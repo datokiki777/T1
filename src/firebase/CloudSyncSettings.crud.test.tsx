@@ -6,18 +6,6 @@ import { CloudSyncSettings } from "./CloudSyncSettings";
 import { useAppStore } from "../app/store";
 import { resetAppForTest } from "../test/resetAppForTest";
 
-// T1 ships with cloud sync deliberately unconfigured (see config.ts) until
-// a real, T1-only Firebase project exists. This test file exercises the
-// CloudSyncSettings UI/logic itself (sign-in form, conflict resolution,
-// sync status) — all of that code is unchanged and still needs to work
-// correctly for whenever a real config is added, so these tests mock
-// isFirebaseConfigured back to true rather than being deleted or left
-// failing against the current real (unconfigured) default.
-vi.mock("./config", async () => {
-  const actual = await vi.importActual<typeof import("./config")>("./config");
-  return { ...actual, isFirebaseConfigured: true };
-});
-
 describe("Cloud Sync settings — sign-in form", () => {
   beforeEach(async () => {
     await resetAppForTest();
