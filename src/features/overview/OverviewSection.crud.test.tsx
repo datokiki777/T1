@@ -25,6 +25,7 @@ describe("Overview page — matches the old app's business logic", () => {
     await user.click(screen.getByRole("button", { name: "+ Group" }));
     await user.click(screen.getByRole("button", { name: "+ New period" }));
     await expandFirstPeriod(user);
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-01-07" } });
     await user.click(screen.getByRole("button", { name: "+ Add client" }));
 
     const overviewCard = screen.getByText("📊 Overview").closest("section")!;
@@ -44,17 +45,19 @@ describe("Overview page — matches the old app's business logic", () => {
     });
 
     // Status badges update automatically when a row's status changes.
-    await user.click(within(table).getByRole("button", { name: "—" })); // -> done
+    await user.click(within(table).getByRole("button", { name: "—" }));
+    await user.click(within(table).getByRole("button", { name: "● Unpaid" })); // -> done
     await waitFor(() => {
       const statusRow = within(overviewCard).getByText(/Done \/ Fail/).parentElement!;
       expect(within(statusRow).getAllByText("1")[0]).toBeInTheDocument();
     });
 
-    // Cycle on to "unpaid": done -> fail -> fixed -> wrong -> unpaid.
+    // Cycle on to "unpaid": done -> fail -> fixed -> wrong -> none -> unpaid.
     await user.click(within(table).getByRole("button", { name: "✓ Done" }));
     await user.click(within(table).getByRole("button", { name: "✕ Fail" }));
     await user.click(within(table).getByRole("button", { name: "⟳ Fixed" }));
     await user.click(within(table).getByRole("button", { name: "! Wrong" }));
+    await user.click(within(table).getByRole("button", { name: "—" }));
     expect(await within(table).findByRole("button", { name: "● Unpaid" })).toBeInTheDocument();
 
     // Unpaid = sum of Amount of unpaid rows; no expense/salary -> income == unpaid.
@@ -84,8 +87,8 @@ describe("Overview page — matches the old app's business logic", () => {
     await openGroupMenu();
     await user.click(screen.getByRole("button", { name: "+ Group" }));
 
-    // Set a default salary of 400/28days -> 100/week.
-    const salaryInput = screen.getByLabelText("Default salary / 28d");
+    // Set a monthly salary of 400.
+    const salaryInput = screen.getByLabelText("Salary / month");
     await user.clear(salaryInput);
     await user.type(salaryInput, "400");
 
@@ -102,10 +105,7 @@ describe("Overview page — matches the old app's business logic", () => {
     const table = screen.getByRole("table");
     const grossInput = within(table).getAllByPlaceholderText("0")[0];
     await user.type(grossInput, "1000");
-    // done -> fail -> fixed -> wrong -> unpaid
-    for (const name of ["—", "✓ Done", "✕ Fail", "⟳ Fixed", "! Wrong"]) {
-      await user.click(within(table).getByRole("button", { name }));
-    }
+    await user.click(within(table).getByRole("button", { name: "—" })); // -> unpaid
 
     const overviewCard = screen.getByText("📊 Overview").closest("section")!;
     // Overview starts collapsed by default now — open it.
@@ -116,10 +116,10 @@ describe("Overview page — matches the old app's business logic", () => {
       expect(unpaidPill).toHaveTextContent("1000");
     });
 
-    // salary owed = 100 (1 week * 100/week, 0 paid weeks) -> income = 1000 - 100 = 900
+    // one salary month -> salary 400 -> income = 1000 - 0 - 400 = 600
     await waitFor(() => {
       const incomePill = within(overviewCard).getByText("Income").parentElement!;
-      expect(incomePill).toHaveTextContent("900");
+      expect(incomePill).toHaveTextContent("600");
     });
   });
 
@@ -140,8 +140,8 @@ describe("Overview page — matches the old app's business logic", () => {
     await user.type(within(table).getByPlaceholderText("Client name"), "Drilldown Client");
 
     // Cycle the row's status to "done".
-    const statusBtn = within(table).getByRole("button", { name: "—" });
-    await user.click(statusBtn);
+    await user.click(within(table).getByRole("button", { name: "—" }));
+    await user.click(within(table).getByRole("button", { name: "● Unpaid" })); // -> done
 
     // Switch to Review — so navigating to Edit afterward is unambiguous
     // proof the click actually fired the navigation, not just "was
@@ -155,7 +155,7 @@ describe("Overview page — matches the old app's business logic", () => {
     // No client list until a badge is clicked.
     expect(within(overviewCard).queryByRole("list")).not.toBeInTheDocument();
 
-    const doneBadge = await within(overviewCard).findByRole("button", { name: "1" });
+    const doneBadge = (await within(overviewCard).findAllByRole("button", { name: "1" }))[0];
     await user.click(doneBadge);
 
     const list = within(overviewCard).getByRole("list", { name: "Done clients" });
@@ -193,7 +193,8 @@ describe("Overview page — matches the old app's business logic", () => {
     await user.type(rows[rows.length - 1], "Noted Client");
     await user.click(within(table).getAllByRole("button", { name: /Add note|Saved/ })[0]);
     await user.type(screen.getByPlaceholderText("Private note for this client..."), "Call back Monday");
-    await user.click(within(table).getByRole("button", { name: "—" })); // none -> done
+    await user.click(within(table).getByRole("button", { name: "—" }));
+    await user.click(within(table).getByRole("button", { name: "● Unpaid" })); // -> done
 
     // Second client — also Done, but left with no comment at all.
     await user.click(screen.getByRole("button", { name: "+ Add client" }));
@@ -201,6 +202,7 @@ describe("Overview page — matches the old app's business logic", () => {
     rows = within(table).getAllByPlaceholderText("Client name");
     await user.type(rows[rows.length - 1], "Silent Client");
     await user.click(within(table).getByRole("button", { name: "—" }));
+    await user.click(within(table).getByRole("button", { name: "● Unpaid" })); // -> done
 
     // Switch to Review — so navigating to Edit afterward is unambiguous
     // proof the long-press actually fired, not just "was already there".
@@ -215,7 +217,7 @@ describe("Overview page — matches the old app's business logic", () => {
     // bump it, and Fail/Fixed/Wrong all stay at 0.
     const commentsLabel = within(overviewCard).getByText("📝 Comments");
     const commentsRow = commentsLabel.closest("div")!;
-    const [doneBadge, failBadge, fixedBadge, wrongBadge] = within(commentsRow).getAllByRole("button");
+    const [, doneBadge, failBadge, fixedBadge, wrongBadge] = within(commentsRow).getAllByRole("button");
     expect(doneBadge).toHaveTextContent("1");
     expect(failBadge).toHaveTextContent("0");
     expect(fixedBadge).toHaveTextContent("0");
@@ -260,6 +262,7 @@ describe("Overview page — matches the old app's business logic", () => {
     await user.click(within(table).getByRole("button", { name: /Add note|Saved/ }));
     await user.type(screen.getByPlaceholderText("Private note for this client..."), "note A");
     await user.click(within(table).getByRole("button", { name: "—" }));
+    await user.click(within(table).getByRole("button", { name: "● Unpaid" })); // -> done
 
     // Group B: a different Done client, also with a comment. (The group
     // menu is already open from creating Group A — it doesn't auto-close.)
@@ -273,6 +276,7 @@ describe("Overview page — matches the old app's business logic", () => {
     await user.click(within(table).getByRole("button", { name: /Add note|Saved/ }));
     await user.type(screen.getByPlaceholderText("Private note for this client..."), "note B");
     await user.click(within(table).getByRole("button", { name: "—" }));
+    await user.click(within(table).getByRole("button", { name: "● Unpaid" })); // -> done
 
     // Now viewing Group B (the active one) — "Current" scope must show
     // only Group B's one commented client, not Group A's.
@@ -281,7 +285,7 @@ describe("Overview page — matches the old app's business logic", () => {
 
     const commentsLabel = within(overviewCard).getByText("📝 Comments");
     const commentsRow = commentsLabel.closest("div")!;
-    const [doneBadge] = within(commentsRow).getAllByRole("button");
+    const [, doneBadge] = within(commentsRow).getAllByRole("button");
     expect(doneBadge).toHaveTextContent("1");
 
     // Switching to "All" must count both groups' commented clients together.
@@ -311,6 +315,8 @@ describe("Overview page — matches the old app's business logic", () => {
     await expandFirstPeriod(user);
     fireEvent.change(screen.getByLabelText("From"), { target: { value: "2026-06-01" } });
     fireEvent.change(screen.getByLabelText("To"), { target: { value: "2026-06-08" } });
+    await user.click(screen.getByRole("button", { name: "+ Add client" }));
+    await user.type(within(screen.getByRole("table")).getAllByPlaceholderText("0")[0], "100");
 
     const overviewCard = screen.getByText("📊 Overview").closest("section")!;
     await user.click(within(overviewCard).getByRole("button", { name: /Overview/ }));

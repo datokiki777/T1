@@ -71,12 +71,13 @@ export interface StatusCounts {
 }
 
 export interface GroupFinancials extends PeriodTotals {
+  /** Total monthly salary owed across the group's salary months. */
   salary: number;
-  salaryAccrued: number;
-  salaryPaid: number;
+  /** Σ over salary months of (Unpaid − Expense − monthly Salary). */
   income: number;
-  grossWeeks: number;
-  paidWeeks: number;
+  salaryMonths: number;
+  /** Clients with money entered but no usable date — not part of Income. */
+  undatedRows: number;
 }
 
 export interface AppSettings {

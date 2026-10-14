@@ -49,7 +49,7 @@ export function SettingsPanel() {
         <h2 className={styles.cardTitle}>New group defaults</h2>
         <div className={styles.fieldRow}>
           <label className={styles.field}>
-            <span>Default salary / 28 days</span>
+            <span>Default salary / month</span>
             <NumericTextField
               syncKey="app-settings"
               value={settings.defaultSalary}
@@ -58,7 +58,7 @@ export function SettingsPanel() {
           </label>
         </div>
         <p className={styles.hint}>
-          These values are only used when creating a new group — existing groups
+          This value is only used when creating a new group — existing groups
           are not affected.
         </p>
       </section>

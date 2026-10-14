@@ -58,7 +58,7 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     expect(switcherBtn).toHaveTextContent("Select group");
   });
 
-  it("long-pressing opens a management menu with group actions and default-rate/salary fields", async () => {
+  it("long-pressing opens a management menu with group actions and salary field", async () => {
     render(<App />);
     await screen.findByText("Select group");
 
@@ -71,7 +71,7 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Archive / Restore" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Default salary / 28d")).toBeInTheDocument();
+    expect(screen.getByLabelText("Salary / month")).toBeInTheDocument();
     expect(menu).toBeInTheDocument();
   });
 
@@ -167,7 +167,7 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     expect(screen.getByRole("button", { name: "Rename" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Archive / Restore" })).toBeEnabled();
-    expect(screen.getByLabelText("Default salary / 28d")).toBeEnabled();
+    expect(screen.getByLabelText("Salary / month")).toBeEnabled();
 
     await user.click(screen.getByRole("tab", { name: "Review" }));
 
@@ -175,7 +175,7 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     expect(screen.getByRole("button", { name: "Rename" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Archive / Restore" })).toBeDisabled();
-    expect(screen.getByLabelText("Default salary / 28d")).toBeDisabled();
+    expect(screen.getByLabelText("Salary / month")).toBeDisabled();
 
     // But tap-to-cycle (browsing groups) must still work in Review mode:
     // close the (still-open, now-disabled) menu with another long-press,
@@ -196,7 +196,7 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     await screen.findByText("Select group");
     await addGroupViaMenu(user, "Clear And Retype Group");
 
-    const salaryInput = screen.getByLabelText("Default salary / 28d");
+    const salaryInput = screen.getByLabelText("Salary / month");
 
     // Delete everything down to empty, THEN type — not just tap-in-and-type.
     await user.clear(salaryInput);

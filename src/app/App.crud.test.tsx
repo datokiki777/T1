@@ -104,7 +104,8 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
 
     // Cycle status: none -> done -> fail -> fixed -> wrong
     const statusBtn = within(table).getByRole("button", { name: "—" });
-    await user.click(statusBtn); // done
+    await user.click(statusBtn); // unpaid
+    await user.click(screen.getByRole("button", { name: "● Unpaid" })); // done
     await user.click(screen.getByRole("button", { name: "✓ Done" })); // fail
     await user.click(screen.getByRole("button", { name: "✕ Fail" })); // fixed
     await user.click(screen.getByRole("button", { name: "⟳ Fixed" })); // wrong

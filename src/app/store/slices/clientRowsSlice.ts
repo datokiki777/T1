@@ -5,7 +5,7 @@ import type { ClientRow, DoneStatus } from "../../../shared/types/domain";
 import { createPersistHelper } from "../persistHelper";
 import type { AppState } from "../types";
 
-const STATUS_CYCLE: DoneStatus[] = ["none", "done", "fail", "fixed", "wrong", "unpaid"];
+const STATUS_CYCLE: DoneStatus[] = ["none", "unpaid", "done", "fail", "fixed", "wrong"];
 
 export interface ClientRowsSlice {
   clientRows: ClientRow[];

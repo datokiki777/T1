@@ -113,11 +113,11 @@ function ReviewGroupCard({
           </div>
         </div>
         <div className={styles.groupBadges}>
+          {statusCounts.unpaid > 0 && <span className={styles.badgeUnpaidStatus}>{statusCounts.unpaid}</span>}
           {statusCounts.done > 0 && <span className={styles.badgeDone}>{statusCounts.done}</span>}
           {statusCounts.fail > 0 && <span className={styles.badgeFail}>{statusCounts.fail}</span>}
           {statusCounts.fixed > 0 && <span className={styles.badgeFixed}>{statusCounts.fixed}</span>}
           {statusCounts.wrong > 0 && <span className={styles.badgeWrong}>{statusCounts.wrong}</span>}
-          {statusCounts.unpaid > 0 && <span className={styles.badgeUnpaidStatus}>{statusCounts.unpaid}</span>}
         </div>
       </div>
 

@@ -53,47 +53,41 @@ function makeRow(periodId: string, overrides: Partial<ClientRow> = {}): ClientRo
   };
 }
 
-describe("computeGroupFinancials — salary/income vs the old app's calcGroupFinancials", () => {
+describe("computeGroupFinancials — monthly salary and Income", () => {
   it("sums amount/expense/my/unpaid across every period in the group", () => {
     const group = makeGroup();
     const p1 = makePeriod({ fromDate: "2026-01-01", toDate: "2026-01-07" });
     const p2 = makePeriod({ fromDate: "2026-02-01", toDate: "2026-02-07" });
     const rows = [
       makeRow(p1.id, { amount: "100", expense: "" }),
-      makeRow(p2.id, { amount: "200", expense: "" }),
+      makeRow(p2.id, { amount: "200", expense: "30", status: "unpaid" }),
     ];
     const t = computeGroupFinancials(group, [p1, p2], rows);
     expect(t.amount).toBe(300);
-    expect(t.myEur).toBe(300); // amount − expense (expense empty = 0)
+    expect(t.expense).toBe(30);
+    expect(t.myEur).toBe(270); // amount − expense
+    expect(t.unpaid).toBe(200);
   });
 
-  it("accrues salary from weekly rate * covered amount-weeks", () => {
-    // 28-day default salary of 400 -> weekly salary = 100
-    const group = makeGroup({ defaultSalary: 400 });
-    // 1 week period with a amount value -> 1 amount-week covered
-    const p1 = makePeriod({ fromDate: "2026-01-01", toDate: "2026-01-07", paidWeeks: 0 });
-    const rows = [makeRow(p1.id, { amount: "100", expense: "" })];
-    const t = computeGroupFinancials(group, [p1], rows);
-    expect(t.grossWeeks).toBe(1);
-    expect(t.salaryAccrued).toBeCloseTo(100); // 100/week * 1 week
-    expect(t.salaryPaid).toBe(0); // paidWeeks = 0
-    expect(t.salary).toBeCloseTo(100); // accrued - paid, floored at 0
-  });
-
-  it("reduces owed salary by paid weeks, never going negative", () => {
-    const group = makeGroup({ defaultSalary: 400 }); // 100/week
-    const p1 = makePeriod({ fromDate: "2026-01-01", toDate: "2026-01-07", paidWeeks: 5 }); // over-paid
-    const rows = [makeRow(p1.id, { amount: "100", expense: "" })];
-    const t = computeGroupFinancials(group, [p1], rows);
-    expect(t.salary).toBe(0); // paid weeks capped at grossWeeks, salary can't go negative
-  });
-
-  it("income = unpaid − total expense − salary owed", () => {
-    const group = makeGroup({ defaultSalary: 400 }); // 100/week
-    const p1 = makePeriod({ fromDate: "2026-01-01", toDate: "2026-01-07" });
+  it("charges one monthly salary per salary month, including empty months in between", () => {
+    const group = makeGroup({ defaultSalary: 1000 });
+    const p1 = makePeriod();
     const rows = [
-      makeRow(p1.id, { amount: "1000", expense: "200", status: "unpaid" }),
-      makeRow(p1.id, { amount: "300", expense: "50", status: "done" }),
+      makeRow(p1.id, { amount: "100", visitDate: "2026-01-07", visitDays: 1 }),
+      makeRow(p1.id, { amount: "100", visitDate: "2026-03-10", visitDays: 1 }),
+    ];
+    const t = computeGroupFinancials(group, [p1], rows);
+    // anchor = 7th: months Jan7-Feb6, Feb7-Mar6, Mar7-Apr6 -> 3 months
+    expect(t.salaryMonths).toBe(3);
+    expect(t.salary).toBe(3000);
+  });
+
+  it("income = unpaid − total expense − monthly salary", () => {
+    const group = makeGroup({ defaultSalary: 100 });
+    const p1 = makePeriod();
+    const rows = [
+      makeRow(p1.id, { amount: "1000", expense: "200", status: "unpaid", visitDate: "2026-01-07", visitDays: 1 }),
+      makeRow(p1.id, { amount: "300", expense: "50", status: "done", visitDate: "2026-01-10", visitDays: 1 }),
     ];
     const t = computeGroupFinancials(group, [p1], rows);
     expect(t.unpaid).toBe(1000);
@@ -104,12 +98,20 @@ describe("computeGroupFinancials — salary/income vs the old app's calcGroupFin
 
   it("with no salary, income = unpaid − total expense", () => {
     const group = makeGroup({ defaultSalary: 0 });
-    const p1 = makePeriod({ fromDate: "2026-01-01", toDate: "2026-01-07" });
-    const rows = [makeRow(p1.id, { amount: "1000", expense: "", status: "unpaid" })];
+    const p1 = makePeriod();
+    const rows = [makeRow(p1.id, { amount: "1000", status: "unpaid", visitDate: "2026-01-07" })];
     const t = computeGroupFinancials(group, [p1], rows);
-    expect(t.unpaid).toBe(1000);
-    expect(t.salary).toBe(0);
     expect(t.income).toBe(1000);
+  });
+
+  it("a client without any date can't be placed: counted in totals, flagged, not in Income", () => {
+    const group = makeGroup({ defaultSalary: 0 });
+    const p1 = makePeriod({ fromDate: null, toDate: null });
+    const rows = [makeRow(p1.id, { amount: "500", status: "unpaid" })];
+    const t = computeGroupFinancials(group, [p1], rows);
+    expect(t.unpaid).toBe(500);
+    expect(t.undatedRows).toBe(1);
+    expect(t.income).toBe(0);
   });
 
   it("ignores periods belonging to a different group", () => {
@@ -158,28 +160,37 @@ describe("computeStatusCounts / computeMarkedClientsCount", () => {
   });
 });
 
-describe("computeMonthlyTotals — prorated by day-overlap, matching calcMonthlyTotals", () => {
-  it("prorates a period's totals by the fraction of days inside the month", () => {
-    const group = makeGroup();
-    // period spans 10 days, only 5 of them are in February
-    const period = makePeriod({ fromDate: "2026-01-28", toDate: "2026-02-06", groupId: "g1" });
-    const rows = [makeRow(period.id, { amount: "1000", expense: "" })]; // full period my€ = 1000
-    const totals = computeMonthlyTotals("2026-02", [group], [period], rows);
-    // total days = 10 (Jan28..Feb6 inclusive), overlap with Feb = Feb1..Feb6 = 6 days
-    const expectedRatio = 6 / 10;
-    expect(totals.amount).toBeCloseTo(1000 * expectedRatio);
-    expect(totals.myEur).toBeCloseTo(1000 * expectedRatio);
+describe("computeMonthlyTotals — salary months", () => {
+  const group = makeGroup({ defaultSalary: 500 });
+  const period = makePeriod();
+
+  it("sums the clients assigned to that salary month, minus the monthly salary", () => {
+    const rows = [
+      makeRow(period.id, { amount: "1000", expense: "100", status: "unpaid", visitDate: "2026-01-07", visitDays: 1 }),
+      makeRow(period.id, { amount: "400", expense: "50", status: "done", visitDate: "2026-02-01", visitDays: 1 }),
+      makeRow(period.id, { amount: "200", status: "unpaid", visitDate: "2026-02-07", visitDays: 1 }),
+    ];
+    // anchor day 7: Jan7-Feb6 holds rows 1 & 2; Feb7-Mar6 holds row 3.
+    const jan = computeMonthlyTotals("2026-01", [group], [period], rows);
+    expect(jan.amount).toBe(1400);
+    expect(jan.expense).toBe(150);
+    expect(jan.myEur).toBe(1250);
+    expect(jan.unpaid).toBe(1000);
+    expect(jan.salary).toBe(500);
+    expect(jan.income).toBe(1000 - 150 - 500);
+    const feb = computeMonthlyTotals("2026-02", [group], [period], rows);
+    expect(feb.amount).toBe(200);
+    expect(feb.income).toBe(200 - 500);
   });
 
   it("returns all zeros when monthKey is null", () => {
-    expect(computeMonthlyTotals(null, [], [], [])).toEqual({ amount: 0, expense: 0, myEur: 0 });
+    expect(computeMonthlyTotals(null, [], [], [])).toEqual({
+      amount: 0, expense: 0, myEur: 0, unpaid: 0, salary: 0, income: 0,
+    });
   });
 
-  it("excludes periods with no overlap with the given month", () => {
-    const group = makeGroup();
-    const period = makePeriod({ fromDate: "2026-01-01", toDate: "2026-01-10", groupId: "g1" });
-    const rows = [makeRow(period.id, { amount: "1000" })];
-    const totals = computeMonthlyTotals("2026-05", [group], [period], rows);
-    expect(totals.amount).toBe(0);
+  it("returns zeros for a month with no data", () => {
+    const rows = [makeRow(period.id, { amount: "1000", visitDate: "2026-01-07" })];
+    expect(computeMonthlyTotals("2026-05", [group], [period], rows).amount).toBe(0);
   });
 });

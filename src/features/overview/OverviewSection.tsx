@@ -6,13 +6,13 @@ import {
   computeMonthlyTotals,
   computeStatusCounts,
   formatMoney,
+  getSalaryMonthKeys,
 } from "../../shared/lib/calc";
 import { formatCurrency } from "../../shared/lib/money";
 import {
   formatDateForRange,
   formatMonthKey,
   formatPeriodDate,
-  getAllMonthKeys,
   getDurationMonthsDays,
   getPeriodsDateRange,
 } from "../../shared/lib/dates";
@@ -93,7 +93,10 @@ export function OverviewSection() {
 
   // --- Monthly stats: month navigation over the months that actually have
   // period data in this scope, defaulting to the most recent one. ---
-  const monthKeys = useMemo(() => getAllMonthKeys(scopedPeriods), [scopedPeriods]);
+  const monthKeys = useMemo(
+    () => getSalaryMonthKeys(scopedGroups, scopedPeriods, clientRows),
+    [scopedGroups, scopedPeriods, clientRows]
+  );
 
   useEffect(() => {
     // Keep the cursor valid whenever the available months change (scope
@@ -226,10 +229,23 @@ export function OverviewSection() {
           <b>{money(grand.income)}</b>
         </span>
       </div>
+      {grand.undatedRows > 0 && (
+        <div className={styles.filteredEmpty}>
+          {grand.undatedRows} client{grand.undatedRows > 1 ? "s" : ""} with no visit date (and no period start date) — not counted in Income.
+        </div>
+      )}
 
       <div className={styles.statusRow}>
-        <span>Done / Fail / Fixed / Wrong / Unpaid</span>
+        <span>Unpaid / Done / Fail / Fixed / Wrong</span>
         <div className={styles.badges}>
+          <button
+            type="button"
+            className={statusFilter === "unpaid" ? styles.badgeUnpaidActive : styles.badgeUnpaid}
+            onClick={() => toggleStatusFilter("unpaid")}
+            aria-pressed={statusFilter === "unpaid"}
+          >
+            {statusCounts.unpaid}
+          </button>
           <button
             type="button"
             className={statusFilter === "done" ? styles.badgeDoneActive : styles.badgeDone}
@@ -261,14 +277,6 @@ export function OverviewSection() {
             aria-pressed={statusFilter === "wrong"}
           >
             {statusCounts.wrong}
-          </button>
-          <button
-            type="button"
-            className={statusFilter === "unpaid" ? styles.badgeUnpaidActive : styles.badgeUnpaid}
-            onClick={() => toggleStatusFilter("unpaid")}
-            aria-pressed={statusFilter === "unpaid"}
-          >
-            {statusCounts.unpaid}
           </button>
         </div>
       </div>
@@ -304,6 +312,14 @@ export function OverviewSection() {
         <div className={styles.badges}>
           <button
             type="button"
+            className={commentsFilter === "unpaid" ? styles.badgeUnpaidActive : styles.badgeUnpaid}
+            onClick={() => toggleCommentsFilter("unpaid")}
+            aria-pressed={commentsFilter === "unpaid"}
+          >
+            {commentedStatusCounts.unpaid}
+          </button>
+          <button
+            type="button"
             className={commentsFilter === "done" ? styles.badgeDoneActive : styles.badgeDone}
             onClick={() => toggleCommentsFilter("done")}
             aria-pressed={commentsFilter === "done"}
@@ -333,14 +349,6 @@ export function OverviewSection() {
             aria-pressed={commentsFilter === "wrong"}
           >
             {commentedStatusCounts.wrong}
-          </button>
-          <button
-            type="button"
-            className={commentsFilter === "unpaid" ? styles.badgeUnpaidActive : styles.badgeUnpaid}
-            onClick={() => toggleCommentsFilter("unpaid")}
-            aria-pressed={commentsFilter === "unpaid"}
-          >
-            {commentedStatusCounts.unpaid}
           </button>
         </div>
       </div>
@@ -424,6 +432,18 @@ export function OverviewSection() {
           <div className={styles.monthRow}>
             <span>Month My €</span>
             <b>{money(monthTotals.myEur)}</b>
+          </div>
+          <div className={styles.monthRow}>
+            <span>Month Unpaid</span>
+            <b>{money(monthTotals.unpaid)}</b>
+          </div>
+          <div className={styles.monthRow}>
+            <span>Month Salary</span>
+            <b>{money(monthTotals.salary)}</b>
+          </div>
+          <div className={styles.monthRow}>
+            <span>Month Income</span>
+            <b>{money(monthTotals.income)}</b>
           </div>
         </div>
       </div>

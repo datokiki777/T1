@@ -6,16 +6,9 @@ import type {
   PeriodTotals,
   StatusCounts,
 } from "../types/domain";
-import { parseMoney } from "./money";
 import { getPeriodsForGroup } from "./entityLookup";
-import {
-  calcCoveredWeeks,
-  daysBetweenInclusive,
-  getMonthEnd,
-  getMonthStart,
-  getOverlapDaysInclusive,
-  parseDateOnly,
-} from "./dates";
+import { computeGroupSalaryMonths, rowAmounts } from "./salaryMonths";
+
 
 /**
  * Period totals.
@@ -40,45 +33,22 @@ export function computePeriodTotals(
 
   for (const row of periodRows) {
     if (row.status === "wrong") continue;
+    const m = rowAmounts(row);
+    if (!m.hasMoney) continue;
 
-    const amountRaw = row.amount.trim();
-    const expenseRaw = row.expense.trim();
-    const hasAmount = amountRaw !== "";
-    const hasExpense = expenseRaw !== "";
-
-    if (!hasAmount && !hasExpense) continue;
-
-    const amountVal = hasAmount ? Math.round(parseMoney(amountRaw)) : 0;
-    const expenseVal = hasExpense ? Math.round(parseMoney(expenseRaw)) : 0;
-    const a = Number.isFinite(amountVal) ? amountVal : 0;
-    const e = Number.isFinite(expenseVal) ? expenseVal : 0;
-
-    amount += a;
-    expense += e;
-    myEur += a - e;
-
-    if (row.status === "unpaid") {
-      unpaid += a;
-    }
+    amount += m.amount;
+    expense += m.expense;
+    myEur += m.amount - m.expense;
+    if (row.status === "unpaid") unpaid += m.amount;
   }
 
   return { amount, expense, myEur, unpaid };
 }
 
-function periodHasMoneyValue(period: Period, rows: ClientRow[], key: "amount" | "expense"): boolean {
-  return rows.some((row) => {
-    if (row.periodId !== period.id) return false;
-    if (row.status === "wrong") return false;
-    const raw = row[key].trim();
-    if (!raw) return false;
-    return Number.isFinite(parseMoney(raw));
-  });
-}
-
 /**
- * Faithful port of calcGroupFinancials() (js/12-calc-totals.js): sums every
- * period's totals, then derives salary accrual/payment and income from
- * covered weeks vs paid weeks.
+ * Group financials: sums every period's totals, then derives the monthly
+ * salary and Income from the group's salary months (see salaryMonths.ts):
+ *   Income = Σ over salary months of (Unpaid − Expense − monthly Salary).
  */
 export function computeGroupFinancials(
   group: Group,
@@ -99,23 +69,16 @@ export function computeGroupFinancials(
     { amount: 0, expense: 0, myEur: 0, unpaid: 0 }
   );
 
-  const weeklySalary = Math.max(0, Math.round(group.defaultSalary)) / 4;
-  const grossWeeks = calcCoveredWeeks(groupPeriods, (p) => periodHasMoneyValue(p, rows, "amount"));
-  const paidWeeks = groupPeriods.reduce((sum, p) => sum + Math.max(0, Math.floor(p.paidWeeks ?? 0)), 0);
-  const salaryAccrued = weeklySalary * grossWeeks;
-  const salaryPaid = weeklySalary * Math.min(paidWeeks, grossWeeks);
-  const salary = Math.max(0, salaryAccrued - salaryPaid);
-  // Income = Unpaid − total Expense − remaining Salary.
-  const income = totals.unpaid - totals.expense - salary;
+  const sm = computeGroupSalaryMonths(group, periods, rows);
+  const salary = sm.months.reduce((sum, m) => sum + m.salary, 0);
+  const income = sm.months.reduce((sum, m) => sum + m.income, 0);
 
   return {
     ...totals,
     salary,
-    salaryAccrued,
-    salaryPaid,
     income,
-    grossWeeks,
-    paidWeeks,
+    salaryMonths: sm.months.length,
+    undatedRows: sm.undatedRows,
   };
 }
 
@@ -133,11 +96,9 @@ export function computeGrandTotals(
       acc.myEur += t.myEur;
       acc.unpaid += t.unpaid;
       acc.salary += t.salary;
-      acc.salaryAccrued += t.salaryAccrued;
-      acc.salaryPaid += t.salaryPaid;
       acc.income += t.income;
-      acc.grossWeeks += t.grossWeeks;
-      acc.paidWeeks += t.paidWeeks;
+      acc.salaryMonths += t.salaryMonths;
+      acc.undatedRows += t.undatedRows;
       return acc;
     },
     {
@@ -146,11 +107,9 @@ export function computeGrandTotals(
       myEur: 0,
       unpaid: 0,
       salary: 0,
-      salaryAccrued: 0,
-      salaryPaid: 0,
       income: 0,
-      grossWeeks: 0,
-      paidWeeks: 0,
+      salaryMonths: 0,
+      undatedRows: 0,
     }
   );
 }
@@ -174,42 +133,44 @@ export function computeMarkedClientsCount(rows: ClientRow[]): number {
   return c.done + c.fail + c.fixed + c.wrong + c.unpaid;
 }
 
-/**
- * Faithful port of calcMonthlyTotals(): prorates each period's totals by the
- * fraction of its days that fall within the given month.
- */
+export interface MonthlyTotals {
+  amount: number;
+  expense: number;
+  myEur: number;
+  unpaid: number;
+  salary: number;
+  income: number;
+}
+
+/** Sorted union of the salary-month keys of the given groups. */
+export function getSalaryMonthKeys(groups: Group[], periods: Period[], rows: ClientRow[]): string[] {
+  const keys = new Set<string>();
+  for (const g of groups) {
+    for (const m of computeGroupSalaryMonths(g, periods, rows).months) keys.add(m.key);
+  }
+  return [...keys].sort();
+}
+
+/** Totals of one salary month (key = YYYY-MM it starts in), summed over groups. */
 export function computeMonthlyTotals(
   monthKey: string | null,
   groups: Group[],
   periods: Period[],
   rows: ClientRow[]
-): { amount: number; expense: number; myEur: number } {
-  const result = { amount: 0, expense: 0, myEur: 0 };
+): MonthlyTotals {
+  const result: MonthlyTotals = { amount: 0, expense: 0, myEur: 0, unpaid: 0, salary: 0, income: 0 };
   if (!monthKey) return result;
-
-  const monthStart = getMonthStart(monthKey);
-  const monthEnd = getMonthEnd(monthKey);
-  const groupIds = new Set(groups.map((g) => g.id));
-
-  for (const period of periods) {
-    if (!groupIds.has(period.groupId)) continue;
-
-    const from = parseDateOnly(period.fromDate);
-    const to = parseDateOnly(period.toDate);
-    if (!from || !to || to < from) continue;
-
-    const totalDays = daysBetweenInclusive(from, to);
-    const overlapDays = getOverlapDaysInclusive(from, to, monthStart, monthEnd);
-    if (overlapDays <= 0 || totalDays <= 0) continue;
-
-    const ratio = overlapDays / totalDays;
-    const t = computePeriodTotals(period, rows);
-
-    result.amount += t.amount * ratio;
-    result.expense += t.expense * ratio;
-    result.myEur += t.myEur * ratio;
+  for (const g of groups) {
+    for (const m of computeGroupSalaryMonths(g, periods, rows).months) {
+      if (m.key !== monthKey) continue;
+      result.amount += m.amount;
+      result.expense += m.expense;
+      result.myEur += m.myEur;
+      result.unpaid += m.unpaid;
+      result.salary += m.salary;
+      result.income += m.income;
+    }
   }
-
   return result;
 }
 

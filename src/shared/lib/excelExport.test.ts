@@ -54,7 +54,7 @@ describe("buildExcelRows", () => {
     expect(rows[0]).toMatchObject({
       Group: "Group 1",
       Archived: "no",
-      DefaultSalaryPer28Days: 0,
+      MonthlySalary: 0,
       From: "01/01/2026",
       To: "31/01/2026",
       PaidWeeks: 0,
@@ -121,12 +121,13 @@ describe("buildExcelSummary", () => {
   });
 
   it("computes salary/income the same way as computeGroupFinancials", () => {
-    const group = makeGroup({ defaultSalary: 400 }); // 100/week
+    const group = makeGroup({ defaultSalary: 400 }); // monthly
     const period = makePeriod({ fromDate: "2026-01-01", toDate: "2026-01-07", paidWeeks: 0 });
-    const rows = [makeRow({ amount: "1000" })];
+    const rows = [makeRow({ amount: "1000", expense: "100", status: "unpaid" })];
     const summary = buildExcelSummary([group], [period], rows);
-    expect(summary[0].SalaryAccrued).toBeCloseTo(100);
-    expect(summary[0].Income).toBeCloseTo(summary[0].Unpaid - summary[0].SalaryRemaining);
+    expect(summary[0].SalaryMonths).toBe(1);
+    expect(summary[0].SalaryTotal).toBe(400);
+    expect(summary[0].Income).toBe(1000 - 100 - 400);
   });
 
   it("returns one summary row per group even with zero periods", () => {

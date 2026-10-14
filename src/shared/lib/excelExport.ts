@@ -7,7 +7,7 @@ import { getPeriodsForGroup, getRowsForPeriod } from "./entityLookup";
 export interface ExcelRow {
   Group: string;
   Archived: "yes" | "no";
-  DefaultSalaryPer28Days: number;
+  MonthlySalary: number;
   From: string;
   To: string;
   PaidWeeks: number;
@@ -23,7 +23,7 @@ export interface ExcelRow {
 export interface ExcelSummaryRow {
   Group: string;
   Archived: "yes" | "no";
-  DefaultSalaryPer28Days: number;
+  MonthlySalary: number;
   CurrentCarNumber: string;
   Periods: number;
   Rows: number;
@@ -31,9 +31,8 @@ export interface ExcelSummaryRow {
   Expense: number;
   "My €": number;
   Unpaid: number;
-  SalaryAccrued: number;
-  SalaryPaid: number;
-  SalaryRemaining: number;
+  SalaryMonths: number;
+  SalaryTotal: number;
   Income: number;
   Done: number;
   Fail: number;
@@ -59,7 +58,7 @@ export function buildExcelRows(groups: Group[], periods: Period[], clientRows: C
         out.push({
           Group: group.archived ? `📦 ${group.name}` : group.name,
           Archived: group.archived ? "yes" : "no",
-          DefaultSalaryPer28Days: group.defaultSalary,
+          MonthlySalary: group.defaultSalary,
           From: formatPeriodDate(period.fromDate),
           To: formatPeriodDate(period.toDate),
           PaidWeeks: period.paidWeeks ?? 0,
@@ -93,7 +92,7 @@ export function buildExcelSummary(
     return {
       Group: group.archived ? `📦 ${group.name}` : group.name,
       Archived: group.archived ? "yes" : "no",
-      DefaultSalaryPer28Days: group.defaultSalary,
+      MonthlySalary: group.defaultSalary,
       CurrentCarNumber: group.currentCarNumber ?? "",
       Periods: groupPeriods.length,
       Rows: groupRows.length,
@@ -101,9 +100,8 @@ export function buildExcelSummary(
       Expense: financials.expense,
       "My €": financials.myEur,
       Unpaid: financials.unpaid,
-      SalaryAccrued: financials.salaryAccrued,
-      SalaryPaid: financials.salaryPaid,
-      SalaryRemaining: financials.salary,
+      SalaryMonths: financials.salaryMonths,
+      SalaryTotal: financials.salary,
       Income: financials.income,
       Done: statusCounts.done,
       Fail: statusCounts.fail,

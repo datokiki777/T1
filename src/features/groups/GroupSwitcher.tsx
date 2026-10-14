@@ -161,7 +161,7 @@ export function GroupSwitcher() {
 
           <div className={styles.settingsRow}>
             <label className={styles.settingsField}>
-              <span>Default salary / 28d</span>
+              <span>Salary / month</span>
               <NumericTextField
                 disabled={!activeGroup || isReviewMode}
                 syncKey={activeGroup?.id ?? "none"}

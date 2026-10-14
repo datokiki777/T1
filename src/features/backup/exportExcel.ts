@@ -18,7 +18,7 @@ export async function exportToExcel() {
   wsRows["!cols"] = [
     { wch: 20 }, // Group
     { wch: 10 }, // Archived
-    { wch: 22 }, // DefaultSalaryPer28Days
+    { wch: 22 }, // MonthlySalary
     { wch: 12 }, // From
     { wch: 12 }, // To
     { wch: 12 }, // PaidWeeks
@@ -34,16 +34,15 @@ export async function exportToExcel() {
   wsSummary["!cols"] = [
     { wch: 20 }, // Group
     { wch: 10 }, // Archived
-    { wch: 22 }, // DefaultSalaryPer28Days
+    { wch: 22 }, // MonthlySalary
     { wch: 10 }, // Periods
     { wch: 10 }, // Rows
     { wch: 12 }, // Amount
     { wch: 12 }, // Expense
     { wch: 12 }, // My €
     { wch: 12 }, // Unpaid
-    { wch: 14 }, // SalaryAccrued
-    { wch: 12 }, // SalaryPaid
-    { wch: 16 }, // SalaryRemaining
+    { wch: 13 }, // SalaryMonths
+    { wch: 13 }, // SalaryTotal
     { wch: 12 }, // Income
     { wch: 8 }, // Done
     { wch: 8 }, // Fail

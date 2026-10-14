@@ -26,7 +26,7 @@ describe("Settings — defaults, currency display, destructive-action confirmati
     await screen.findByText("Select group");
     await openSettings(user);
 
-    const salaryInput = screen.getByLabelText("Default salary / 28 days");
+    const salaryInput = screen.getByLabelText("Default salary / month");
     await user.clear(salaryInput);
     await user.type(salaryInput, "500");
 
