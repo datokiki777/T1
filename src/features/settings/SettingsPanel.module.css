@@ -53,6 +53,88 @@
   margin: 0;
 }
 
+/* Currency picker — a styled button that opens our own modal, instead
+   of a native <select> (which opens the OS's own picker UI on mobile,
+   inconsistent with the rest of the app's look). */
+.currencyPickerBtn {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  text-align: left;
+  cursor: pointer;
+}
+
+.currencyModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: var(--space-6);
+}
+
+.currencyModalCard {
+  width: 100%;
+  max-width: 320px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.currencyModalTitle {
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+
+.currencyModalList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.currencyOption,
+.currencyOptionActive {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
+  text-align: left;
+  cursor: pointer;
+}
+
+.currencyOptionActive {
+  background: rgba(255, 196, 64, 0.14);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.currencyModalClose {
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-md);
+  font-weight: 600;
+  align-self: center;
+}
+
 .hint code {
   background: var(--surface-3);
   padding: 1px 6px;

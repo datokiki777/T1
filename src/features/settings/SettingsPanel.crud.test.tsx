@@ -66,8 +66,8 @@ describe("Settings — defaults, currency display, destructive-action confirmati
     await user.type(within(table).getAllByPlaceholderText("0")[0], "1234");
 
     await openSettings(user);
-    const currencySelect = screen.getByLabelText("Currency symbol");
-    await user.selectOptions(currencySelect, "$");
+    await user.click(screen.getByRole("button", { name: "€ Euro" }));
+    await user.click(screen.getByRole("button", { name: "$ US Dollar" }));
 
     await waitFor(async () => {
       const stored = await db.settings.get("app");
@@ -85,6 +85,37 @@ describe("Settings — defaults, currency display, destructive-action confirmati
     // The underlying stored Amount value must be completely unchanged.
     const rows = await db.clientRows.toArray();
     expect(rows[0].amount).toBe("1234");
+  });
+
+  it("the currency picker is our own modal (not a native <select>), and closes on Cancel or tapping outside without changing anything", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Select group");
+    await openSettings(user);
+
+    const currencyBtn = screen.getByRole("button", { name: "€ Euro" });
+    await user.click(currencyBtn);
+
+    // All 5 options listed inside the modal, current one visually
+    // distinguished. Scoped to the modal card to avoid ambiguity with
+    // the trigger button behind it (also showing "€ Euro").
+    const modalCard = screen.getByText("Choose currency").closest('[class*="currencyModalCard"]') as HTMLElement;
+    const activeOption = within(modalCard).getByRole("button", { name: "€ Euro" });
+    expect(activeOption.className).toMatch(/currencyOptionActive/);
+    expect(within(modalCard).getAllByText(/Euro|US Dollar|British Pound|Georgian Lari|Russian Ruble/)).toHaveLength(5);
+
+    // Cancel closes it without changing the selection.
+    await user.click(within(modalCard).getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByText("Choose currency")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "€ Euro" })).toBeInTheDocument();
+
+    // Reopen, then tap the overlay (outside the card) — also closes,
+    // also no change.
+    await user.click(screen.getByRole("button", { name: "€ Euro" }));
+    const overlay = screen.getByText("Choose currency").closest('[class*="currencyModalOverlay"]') as HTMLElement;
+    await user.click(overlay);
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "€ Euro" })).toBeInTheDocument();
   });
 
   it("skips the confirmation dialog for destructive actions when the setting is turned off", async () => {

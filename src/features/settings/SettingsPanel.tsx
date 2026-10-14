@@ -27,6 +27,9 @@ export function SettingsPanel() {
   const [clearConfirmText, setClearConfirmText] = useState("");
   const [clearing, setClearing] = useState(false);
   const [cleared, setCleared] = useState(false);
+  const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
+  const currentCurrency =
+    CURRENCY_OPTIONS.find((opt) => opt.symbol === settings.currencySymbol) ?? CURRENCY_OPTIONS[0];
 
   const canClear = clearConfirmText.trim() === CLEAR_CONFIRM_PHRASE;
 
@@ -65,19 +68,52 @@ export function SettingsPanel() {
 
       <section className={styles.card}>
         <h2 className={styles.cardTitle}>Currency display</h2>
-        <label className={styles.field}>
+        <div className={styles.field}>
           <span>Currency symbol</span>
-          <select
-            value={settings.currencySymbol}
-            onChange={(e) => updateSettings({ currencySymbol: e.target.value })}
+          <button
+            type="button"
+            className={styles.currencyPickerBtn}
+            onClick={() => setCurrencyPickerOpen(true)}
           >
-            {CURRENCY_OPTIONS.map((opt) => (
-              <option key={opt.symbol} value={opt.symbol}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            {currentCurrency.label}
+          </button>
+        </div>
+        {currencyPickerOpen && (
+          <div
+            className={styles.currencyModalOverlay}
+            onClick={() => setCurrencyPickerOpen(false)}
+          >
+            <div className={styles.currencyModalCard} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.currencyModalTitle}>Choose currency</div>
+              <div className={styles.currencyModalList}>
+                {CURRENCY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.symbol}
+                    type="button"
+                    className={
+                      opt.symbol === settings.currencySymbol
+                        ? styles.currencyOptionActive
+                        : styles.currencyOption
+                    }
+                    onClick={() => {
+                      updateSettings({ currencySymbol: opt.symbol });
+                      setCurrencyPickerOpen(false);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={styles.currencyModalClose}
+                onClick={() => setCurrencyPickerOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         <p className={styles.hint}>
           This only changes how amounts are displayed — the stored numeric values stay unchanged.
         </p>
