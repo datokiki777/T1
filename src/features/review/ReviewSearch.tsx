@@ -133,10 +133,10 @@ export function ReviewSearch() {
                   )}
                 </span>
                 <span>
-                  <b>Gross:</b> <span className="js-money">{item.gross}</span>
+                  <b>თანხა:</b> <span className="js-money">{item.amount}</span>
                 </span>
                 <span>
-                  <b>Net:</b> <span className="js-money">{item.net}</span>
+                  <b>ხარჯი:</b> <span className="js-money">{item.expense}</span>
                 </span>
               </div>
               {item.comment && (

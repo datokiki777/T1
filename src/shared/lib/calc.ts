@@ -18,18 +18,18 @@ import {
 } from "./dates";
 
 /**
- * Faithful port of the old app's calcPeriodTotals() (js/12-calc-totals.js).
+ * Period totals.
  *
  * - Rows marked "wrong" are excluded entirely from every total.
- * - Gross/Net are free-text; "" (not entered) is different from "0" (entered).
- * - The app doesn't support cents anywhere: Gross/Net are rounded to whole
- *   numbers the moment they're parsed, before any math happens on them.
- * - "My €" per row = (Net if entered, else Gross if entered, else 0) * rate.
- * - "Unpaid" per row = Gross * rate, only when Gross is entered but Net isn't
- *   (i.e. money billed but not yet reconciled against a net/paid amount).
+ * - Amount/Expense are free-text; "" (not entered) is different from "0".
+ * - The app doesn't support cents: values are rounded to whole numbers the
+ *   moment they're parsed.
+ * - "My €" per row = Amount − Expense (an empty Expense counts as 0).
+ * - "Unpaid" per row = Amount * rate, only when Amount is entered but
+ *   Expense isn't. (Legacy rate-based logic, kept for now — it is NOT
+ *   derived from My €.)
  *
- * `ratePercent` is the GROUP's rate (old app stores it per group, not per
- * period — every period in a group shares one rate).
+ * `ratePercent` is the GROUP's rate; it only affects "Unpaid" now.
  */
 export function computePeriodTotals(
   period: Pick<Period, "id">,
@@ -39,44 +39,39 @@ export function computePeriodTotals(
   const rate = clampRate(ratePercent) / 100;
   const periodRows = rows.filter((r) => r.periodId === period.id);
 
-  let gross = 0;
-  let net = 0;
+  let amount = 0;
+  let expense = 0;
   let myEur = 0;
   let unpaid = 0;
 
   for (const row of periodRows) {
     if (row.status === "wrong") continue;
 
-    const grossRaw = row.gross.trim();
-    const netRaw = row.net.trim();
-    const hasGross = grossRaw !== "";
-    const hasNet = netRaw !== "";
+    const amountRaw = row.amount.trim();
+    const expenseRaw = row.expense.trim();
+    const hasAmount = amountRaw !== "";
+    const hasExpense = expenseRaw !== "";
 
-    if (!hasGross && !hasNet) continue;
+    if (!hasAmount && !hasExpense) continue;
 
-    const grossVal = hasGross ? Math.round(parseMoney(grossRaw)) : 0;
-    const netVal = hasNet ? Math.round(parseMoney(netRaw)) : 0;
+    const amountVal = hasAmount ? Math.round(parseMoney(amountRaw)) : 0;
+    const expenseVal = hasExpense ? Math.round(parseMoney(expenseRaw)) : 0;
+    const a = Number.isFinite(amountVal) ? amountVal : 0;
+    const e = Number.isFinite(expenseVal) ? expenseVal : 0;
 
-    if (Number.isFinite(grossVal)) gross += grossVal;
-    if (Number.isFinite(netVal)) net += netVal;
+    amount += a;
+    expense += e;
+    myEur += a - e;
 
-    if (!hasNet && hasGross && Number.isFinite(grossVal)) {
-      unpaid += grossVal * rate;
+    if (!hasExpense && hasAmount) {
+      unpaid += a * rate;
     }
-
-    let base = 0;
-    if (hasNet && Number.isFinite(netVal)) {
-      base = netVal;
-    } else if (hasGross && Number.isFinite(grossVal)) {
-      base = grossVal;
-    }
-    myEur += base * rate;
   }
 
-  return { gross, net, myEur, unpaid };
+  return { amount, expense, myEur, unpaid };
 }
 
-function periodHasMoneyValue(period: Period, rows: ClientRow[], key: "gross" | "net"): boolean {
+function periodHasMoneyValue(period: Period, rows: ClientRow[], key: "amount" | "expense"): boolean {
   return rows.some((row) => {
     if (row.periodId !== period.id) return false;
     if (row.status === "wrong") return false;
@@ -101,17 +96,17 @@ export function computeGroupFinancials(
   const totals = groupPeriods.reduce(
     (acc, p) => {
       const t = computePeriodTotals(p, rows, group.defaultRate);
-      acc.gross += t.gross;
-      acc.net += t.net;
+      acc.amount += t.amount;
+      acc.expense += t.expense;
       acc.myEur += t.myEur;
       acc.unpaid += t.unpaid;
       return acc;
     },
-    { gross: 0, net: 0, myEur: 0, unpaid: 0 }
+    { amount: 0, expense: 0, myEur: 0, unpaid: 0 }
   );
 
   const weeklySalary = Math.max(0, Math.round(group.defaultSalary)) / 4;
-  const grossWeeks = calcCoveredWeeks(groupPeriods, (p) => periodHasMoneyValue(p, rows, "gross"));
+  const grossWeeks = calcCoveredWeeks(groupPeriods, (p) => periodHasMoneyValue(p, rows, "amount"));
   const paidWeeks = groupPeriods.reduce((sum, p) => sum + Math.max(0, Math.floor(p.paidWeeks ?? 0)), 0);
   const salaryAccrued = weeklySalary * grossWeeks;
   const salaryPaid = weeklySalary * Math.min(paidWeeks, grossWeeks);
@@ -138,8 +133,8 @@ export function computeGrandTotals(
   return groups.reduce(
     (acc, group) => {
       const t = computeGroupFinancials(group, periods, rows);
-      acc.gross += t.gross;
-      acc.net += t.net;
+      acc.amount += t.amount;
+      acc.expense += t.expense;
       acc.myEur += t.myEur;
       acc.unpaid += t.unpaid;
       acc.salary += t.salary;
@@ -151,8 +146,8 @@ export function computeGrandTotals(
       return acc;
     },
     {
-      gross: 0,
-      net: 0,
+      amount: 0,
+      expense: 0,
       myEur: 0,
       unpaid: 0,
       salary: 0,
@@ -192,8 +187,8 @@ export function computeMonthlyTotals(
   groups: Group[],
   periods: Period[],
   rows: ClientRow[]
-): { gross: number; net: number; myEur: number } {
-  const result = { gross: 0, net: 0, myEur: 0 };
+): { amount: number; expense: number; myEur: number } {
+  const result = { amount: 0, expense: 0, myEur: 0 };
   if (!monthKey) return result;
 
   const monthStart = getMonthStart(monthKey);
@@ -215,8 +210,8 @@ export function computeMonthlyTotals(
     const ratio = overlapDays / totalDays;
     const t = computePeriodTotals(period, rows, rate);
 
-    result.gross += t.gross * ratio;
-    result.net += t.net * ratio;
+    result.amount += t.amount * ratio;
+    result.expense += t.expense * ratio;
     result.myEur += t.myEur * ratio;
   }
 

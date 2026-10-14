@@ -26,8 +26,8 @@ export async function exportToExcel() {
     { wch: 22 }, // Client
     { wch: 16 }, // City
     { wch: 28 }, // Comment
-    { wch: 12 }, // Gross
-    { wch: 12 }, // Net
+    { wch: 12 }, // Amount
+    { wch: 12 }, // Expense
     { wch: 10 }, // Status
   ];
 
@@ -39,8 +39,8 @@ export async function exportToExcel() {
     { wch: 22 }, // DefaultSalaryPer28Days
     { wch: 10 }, // Periods
     { wch: 10 }, // Rows
-    { wch: 12 }, // Gross
-    { wch: 12 }, // Net
+    { wch: 12 }, // Amount
+    { wch: 12 }, // Expense
     { wch: 12 }, // My €
     { wch: 12 }, // Unpaid
     { wch: 14 }, // SalaryAccrued

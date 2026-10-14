@@ -77,8 +77,8 @@ describe("migrateLegacyAppState — 100% data fidelity from the real old-app sha
     expect(row1.periodId).toBe("per-1");
     expect(row1.customer).toBe("Acme Corp");
     expect(row1.city).toBe("Tbilisi");
-    expect(row1.gross).toBe("1234.56");
-    expect(row1.net).toBe("987.65");
+    expect(row1.amount).toBe("1234.56");
+    expect(row1.expense).toBe("987.65");
     expect(row1.comment).toBe("Wants a follow-up call next month");
     expect(row1.status).toBe("done");
 
@@ -95,19 +95,19 @@ describe("migrateLegacyAppState — 100% data fidelity from the real old-app sha
     // European decimal-format money string is preserved verbatim (not parsed
     // or reformatted at migration time) — parsing happens later, at calc time.
     const row6 = result.clientRows.find((r) => r.id === "row-6")!;
-    expect(row6.gross).toBe("1.234,56");
+    expect(row6.amount).toBe("1.234,56");
     expect(row6.comment).toBe("European decimal format");
 
     const row7 = result.clientRows.find((r) => r.id === "row-7")!;
     expect(row7.periodId).toBe("per-3");
-    expect(row7.net).toBe("600");
+    expect(row7.expense).toBe("600");
   });
 
   it("the migration function itself copies gross/net verbatim — rounding happens separately, at store init", () => {
     const row1 = result.clientRows.find((r) => r.id === "row-1")!;
-    expect(row1.gross).toBe("1234.56"); // raw string preserved by the migrator itself
+    expect(row1.amount).toBe("1234.56"); // raw string preserved by the migrator itself
     const row4 = result.clientRows.find((r) => r.id === "row-4")!;
-    expect(row4.gross).toBe("250.25");
+    expect(row4.amount).toBe("250.25");
   });
 
   it("is lenient about missing fields, mirroring the old app's own normalizeGroupData", () => {
@@ -186,8 +186,8 @@ describe("Legacy migration MUST import archived groups too, not just the active 
     const row7 = clientRows.find((r) => r.id === "row-7")!;
     expect(row7.customer).toBe("Old Client");
     expect(row7.city).toBe("Zugdidi");
-    expect(row7.gross).toBe("800");
-    expect(row7.net).toBe("600");
+    expect(row7.amount).toBe("800");
+    expect(row7.expense).toBe("600");
     expect(row7.status).toBe("done");
     expect(row7.comment).toBe("Long-time repeat customer");
   });
@@ -223,17 +223,18 @@ describe("Legacy migration MUST import archived groups too, not just the active 
     //
     // Grand total: gross 4030, net 1588, my€ 522.705
     const grand = computeGrandTotals(groups, periods, clientRows);
-    expect(grand.gross).toBe(4030);
-    expect(grand.net).toBe(1588);
-    expect(grand.myEur).toBeCloseTo(522.705, 2);
+    expect(grand.amount).toBe(4030);
+    expect(grand.expense).toBe(1588);
+    // My€ = amount − expense = 4030 − 1588
+    expect(grand.myEur).toBe(2442);
 
     // The archived group's own financials, in isolation, must also match —
     // proving archived-group money isn't silently dropped from totals.
     const archivedGroup = groups.find((g) => g.id === "grp-2")!;
     const archivedFinancials = computeGroupFinancials(archivedGroup, periods, clientRows);
-    expect(archivedFinancials.gross).toBe(800);
-    expect(archivedFinancials.net).toBe(600);
-    expect(archivedFinancials.myEur).toBeCloseTo(120, 2);
+    expect(archivedFinancials.amount).toBe(800);
+    expect(archivedFinancials.expense).toBe(600);
+    expect(archivedFinancials.myEur).toBe(200); // 800 − 600
   });
 });
 

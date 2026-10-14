@@ -75,7 +75,7 @@ export function OverviewSection() {
     [clientRows, scopedPeriodIds]
   );
 
-  // --- Grand totals (Gross / Net / My€ / Unpaid / Income) ---
+  // --- Grand totals (თანხა / ხარჯი / My€ / Unpaid / Income) ---
   const grand = useMemo(
     () => computeGrandTotals(scopedGroups, scopedPeriods, clientRows),
     [scopedGroups, scopedPeriods, clientRows]
@@ -202,12 +202,12 @@ export function OverviewSection() {
         <>
       <div className={styles.grid}>
         <div className={`${styles.kpi} ${styles.kpiGross}`}>
-          <div className={styles.label}>Gross</div>
-          <div className={styles.value}>{money(grand.gross)}</div>
+          <div className={styles.label}>თანხა</div>
+          <div className={styles.value}>{money(grand.amount)}</div>
         </div>
         <div className={`${styles.kpi} ${styles.kpiNet}`}>
-          <div className={styles.label}>Net</div>
-          <div className={styles.value}>{money(grand.net)}</div>
+          <div className={styles.label}>ხარჯი</div>
+          <div className={styles.value}>{money(grand.expense)}</div>
         </div>
         <div className={`${styles.kpi} ${styles.kpiMy}`}>
           <div className={styles.label}>My €</div>
@@ -397,12 +397,12 @@ export function OverviewSection() {
         </div>
         <div className={styles.monthlyGrid}>
           <div className={styles.monthRow}>
-            <span>Month Gross</span>
-            <b>{money(monthTotals.gross)}</b>
+            <span>თვის თანხა</span>
+            <b>{money(monthTotals.amount)}</b>
           </div>
           <div className={styles.monthRow}>
-            <span>Month Net</span>
-            <b>{money(monthTotals.net)}</b>
+            <span>თვის ხარჯი</span>
+            <b>{money(monthTotals.expense)}</b>
           </div>
           <div className={styles.monthRow}>
             <span>Month My €</span>

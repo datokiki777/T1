@@ -14,9 +14,9 @@ const periods: Period[] = [
 ];
 
 const rows: ClientRow[] = [
-  { id: "r1", periodId: "p1", customer: "X", gross: "", net: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 0, updatedAt: 0 },
-  { id: "r2", periodId: "p1", customer: "Y", gross: "", net: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 0, updatedAt: 0 },
-  { id: "r3", periodId: "p2", customer: "Z", gross: "", net: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 0, updatedAt: 0 },
+  { id: "r1", periodId: "p1", customer: "X", amount: "", expense: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 0, updatedAt: 0 },
+  { id: "r2", periodId: "p1", customer: "Y", amount: "", expense: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 0, updatedAt: 0 },
+  { id: "r3", periodId: "p2", customer: "Z", amount: "", expense: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 0, updatedAt: 0 },
 ];
 
 describe("entityLookup", () => {
@@ -34,9 +34,9 @@ describe("entityLookup", () => {
 
   it("getRowsForPeriod always sorts by createdAt, regardless of the input array's own order — this is what keeps Review mode in sync with a manual reorder in Edit mode", () => {
     const outOfOrder: ClientRow[] = [
-      { id: "late", periodId: "p1", customer: "Late", gross: "", net: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 300, updatedAt: 0 },
-      { id: "early", periodId: "p1", customer: "Early", gross: "", net: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 100, updatedAt: 0 },
-      { id: "mid", periodId: "p1", customer: "Mid", gross: "", net: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 200, updatedAt: 0 },
+      { id: "late", periodId: "p1", customer: "Late", amount: "", expense: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 300, updatedAt: 0 },
+      { id: "early", periodId: "p1", customer: "Early", amount: "", expense: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 100, updatedAt: 0 },
+      { id: "mid", periodId: "p1", customer: "Mid", amount: "", expense: "", city: "", status: "none", comment: "", visitDate: null, visitDays: null, createdAt: 200, updatedAt: 0 },
     ];
     expect(getRowsForPeriod(outOfOrder, "p1").map((r) => r.id)).toEqual(["early", "mid", "late"]);
   });

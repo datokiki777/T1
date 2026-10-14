@@ -1,3 +1,4 @@
+import { upgradeLegacyRowFields } from "./legacyRowFields";
 import type { ClientRow, DoneStatus, Group, Period } from "../types/domain";
 
 export const BACKUP_VERSION = 1 as const;
@@ -73,8 +74,8 @@ function validateRow(raw: unknown, index: number, periodIds: Set<string>): strin
   if (!isString(r.id)) return `clientRows[${index}].id must be a string`;
   if (!isString(r.periodId)) return `clientRows[${index}].periodId must be a string`;
   if (!isString(r.customer)) return `clientRows[${index}].customer must be a string`;
-  if (!isString(r.gross)) return `clientRows[${index}].gross must be a string`;
-  if (!isString(r.net)) return `clientRows[${index}].net must be a string`;
+  if (!isString(r.amount)) return `clientRows[${index}].amount must be a string`;
+  if (!isString(r.expense)) return `clientRows[${index}].expense must be a string`;
   if (!isString(r.city)) return `clientRows[${index}].city must be a string`;
   if (!isString(r.comment)) return `clientRows[${index}].comment must be a string`;
   if (!DONE_STATUSES.includes(r.status as DoneStatus)) {
@@ -108,7 +109,7 @@ export function validateBackupPayload(json: unknown): ValidationResult {
 
   const groups = obj.groups as unknown[];
   const periods = obj.periods as unknown[];
-  const clientRows = obj.clientRows as unknown[];
+  const clientRows = (obj.clientRows as unknown[]).map(upgradeLegacyRowFields);
 
   for (let i = 0; i < groups.length; i++) {
     const err = validateGroup(groups[i], i);

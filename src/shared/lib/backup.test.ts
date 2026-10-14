@@ -35,8 +35,8 @@ function makeRow(overrides: Partial<ClientRow> = {}): ClientRow {
     id: "r1",
     periodId: "p1",
     customer: "Acme",
-    gross: "100",
-    net: "",
+    amount: "100",
+    expense: "",
     city: "Tbilisi",
     status: "none",
     comment: "",
@@ -62,7 +62,7 @@ describe("buildBackupPayload / validateBackupPayload round-trip", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.groups).toHaveLength(1);
-      expect(result.data.clientRows[0].gross).toBe("100");
+      expect(result.data.clientRows[0].amount).toBe("100");
     }
   });
 });

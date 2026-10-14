@@ -41,8 +41,8 @@ export interface ClientRow {
   id: string;
   periodId: string;
   customer: string;
-  gross: string; // raw text, exactly like the old app — "" means not entered
-  net: string; // raw text — "" means not entered
+  amount: string; // raw text, exactly like the old app — "" means not entered
+  expense: string; // raw text — "" means not entered
   city: string;
   status: DoneStatus;
   comment: string;
@@ -59,8 +59,8 @@ export interface ClientRow {
 }
 
 export interface PeriodTotals {
-  gross: number;
-  net: number;
+  amount: number;
+  expense: number;
   myEur: number;
   unpaid: number;
 }

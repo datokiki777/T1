@@ -2,7 +2,6 @@ import { Fragment, useState } from "react";
 import { useAppStore } from "../../app/store";
 import type { DoneStatus } from "../../shared/types/domain";
 import { confirmDialog } from "../../shared/modal/modalStore";
-import { parseMoney } from "../../shared/lib/money";
 import styles from "./ClientRowItem.module.css";
 
 const STATUS_LABEL: Record<DoneStatus, string> = {
@@ -45,21 +44,6 @@ export function ClientRowItem({
       return;
     }
     removeRow(row.id);
-  }
-
-  // Net is never more than ~500 off from Gross in real invoices — a bigger
-  // gap almost always means a missed digit while typing. Checked on blur
-  // (not every keystroke) so it doesn't interrupt while entering the value.
-  async function handleNetBlur() {
-    if (!row || !row.gross || !row.net) return;
-    const gross = parseMoney(row.gross);
-    const net = parseMoney(row.net);
-    if (!Number.isFinite(gross) || !Number.isFinite(net)) return;
-    if (Math.abs(gross - net) <= 500) return;
-    await confirmDialog(
-      `Net (${row.net}) looks far off from Gross (${row.gross}) — Net is usually within 500 of Gross. Are you sure this is correct?`,
-      { confirmLabel: "Yes, it's correct" }
-    );
   }
 
   return (
@@ -116,13 +100,13 @@ export function ClientRowItem({
           className={styles.input}
           type="text"
           inputMode="numeric"
-          value={row.gross}
+          value={row.amount}
           placeholder="0"
           autoComplete="chrome-off"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          onChange={(e) => updateRow(row.id, { gross: e.target.value.replace(/\D/g, "") })}
+          onChange={(e) => updateRow(row.id, { amount: e.target.value.replace(/\D/g, "") })}
         />
       </td>
       <td>
@@ -130,14 +114,13 @@ export function ClientRowItem({
           className={styles.input}
           type="text"
           inputMode="numeric"
-          value={row.net}
+          value={row.expense}
           placeholder="0"
           autoComplete="chrome-off"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
-          onChange={(e) => updateRow(row.id, { net: e.target.value.replace(/\D/g, "") })}
-          onBlur={handleNetBlur}
+          onChange={(e) => updateRow(row.id, { expense: e.target.value.replace(/\D/g, "") })}
         />
       </td>
       <td>

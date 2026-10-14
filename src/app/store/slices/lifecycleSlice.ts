@@ -1,3 +1,4 @@
+import { upgradeLegacyRowFields } from "../../../shared/lib/legacyRowFields";
 import type { StateCreator } from "zustand";
 import { groupRepository } from "../../../db/repositories/groupRepository";
 import { periodRepository } from "../../../db/repositories/periodRepository";
@@ -62,7 +63,7 @@ export const createLifecycleSlice: StateCreator<AppState, [], [], LifecycleSlice
         );
 
         // The app no longer supports cents anywhere. Round any legacy
-        // gross/net values that still have decimals (e.g. from an older
+        // amount/expense values that still have decimals (e.g. from an older
         // export or a pre-rounding version of this app) and rewrite them,
         // so stored data matches what's displayed everywhere from now on.
         const rowsToFix: ClientRow[] = [];
@@ -72,15 +73,17 @@ export const createLifecycleSlice: StateCreator<AppState, [], [], LifecycleSlice
           // consistently typed. Not written back to IndexedDB: there's
           // no actual stored value to correct, just a missing-key vs.
           // explicit-null distinction.
+          const upgraded = upgradeLegacyRowFields(row);
+          const wasLegacy = upgraded !== row;
           const normalized: ClientRow = {
-            ...row,
+            ...upgraded,
             visitDate: row.visitDate ?? null,
             visitDays: row.visitDays ?? null,
           };
-          const gross = roundMoneyString(normalized.gross);
-          const net = roundMoneyString(normalized.net);
-          if (gross === normalized.gross && net === normalized.net) return normalized;
-          const fixed = { ...normalized, gross, net, updatedAt: now() };
+          const amount = roundMoneyString(normalized.amount);
+          const expense = roundMoneyString(normalized.expense);
+          if (amount === normalized.amount && expense === normalized.expense && !wasLegacy) return normalized;
+          const fixed = { ...normalized, amount, expense, updatedAt: now() };
           rowsToFix.push(fixed);
           return fixed;
         });
@@ -148,7 +151,7 @@ export const createLifecycleSlice: StateCreator<AppState, [], [], LifecycleSlice
       set({
         groups: snapshot.groups,
         periods: snapshot.periods,
-        clientRows: snapshot.clientRows,
+        clientRows: snapshot.clientRows.map(upgradeLegacyRowFields),
         settings: snapshot.settings,
         dataUpdatedAt: snapshot.dataUpdatedAt,
         activeGroupId: firstActive,

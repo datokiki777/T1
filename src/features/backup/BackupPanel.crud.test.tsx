@@ -69,8 +69,8 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
           id: "r1",
           periodId: "missing-period",
           customer: "X",
-          gross: "",
-          net: "",
+          amount: "",
+          expense: "",
           city: "",
           status: "none",
           comment: "",
@@ -129,8 +129,8 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
           id: "r1",
           periodId: "p1",
           customer: "Restored Client",
-          gross: "1000",
-          net: "",
+          amount: "1000",
+          expense: "",
           city: "Batumi",
           status: "none",
           comment: "",
@@ -171,8 +171,8 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
           id: "r1",
           periodId: "p1",
           customer: "X",
-          gross: "1234.56",
-          net: "78.9",
+          amount: "1234.56",
+          expense: "78.9",
           city: "",
           status: "none",
           comment: "",
@@ -185,8 +185,8 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
     );
 
     const roundTripped = JSON.parse(JSON.stringify(payload));
-    expect(roundTripped.clientRows[0].gross).toBe("1234.56");
-    expect(roundTripped.clientRows[0].net).toBe("78.9");
+    expect(roundTripped.clientRows[0].amount).toBe("1234.56");
+    expect(roundTripped.clientRows[0].expense).toBe("78.9");
     expect(roundTripped.groups[0].defaultRate).toBe(13.5);
   });
 
@@ -215,7 +215,7 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
     const rows = await db.clientRows.toArray();
     const acme = rows.find((r) => r.customer === "Acme Corp")!;
     // 1234.56 gets rounded to 1235 by the store's init() cents-cleanup pass.
-    expect(acme.gross).toBe("1235");
+    expect(acme.amount).toBe("1235");
     expect(acme.status).toBe("done");
 
     const groups = await db.groups.toArray();

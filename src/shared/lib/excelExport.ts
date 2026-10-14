@@ -16,8 +16,8 @@ export interface ExcelRow {
   Client: string;
   City: string;
   Comment: string;
-  Gross: number;
-  Net: number;
+  Amount: number;
+  Expense: number;
   Status: string;
 }
 
@@ -29,8 +29,8 @@ export interface ExcelSummaryRow {
   CurrentCarNumber: string;
   Periods: number;
   Rows: number;
-  Gross: number;
-  Net: number;
+  Amount: number;
+  Expense: number;
   "My €": number;
   Unpaid: number;
   SalaryAccrued: number;
@@ -45,7 +45,7 @@ export interface ExcelSummaryRow {
 
 /**
  * Builds the flat "Rows" sheet — one row per client, across every group and
- * period. Gross/Net are the parsed numeric value, rounded to whole numbers
+ * period. Amount/Expense are the parsed numeric value, rounded to whole numbers
  * (the app doesn't support cents anywhere), matching the old app's export
  * field set.
  */
@@ -69,8 +69,8 @@ export function buildExcelRows(groups: Group[], periods: Period[], clientRows: C
           Client: row.customer,
           City: row.city,
           Comment: row.comment,
-          Gross: Math.round(parseMoney(row.gross) || 0),
-          Net: Math.round(parseMoney(row.net) || 0),
+          Amount: Math.round(parseMoney(row.amount) || 0),
+          Expense: Math.round(parseMoney(row.expense) || 0),
           Status: row.status,
         });
       }
@@ -100,8 +100,8 @@ export function buildExcelSummary(
       CurrentCarNumber: group.currentCarNumber ?? "",
       Periods: groupPeriods.length,
       Rows: groupRows.length,
-      Gross: financials.gross,
-      Net: financials.net,
+      Amount: financials.amount,
+      Expense: financials.expense,
       "My €": financials.myEur,
       Unpaid: financials.unpaid,
       SalaryAccrued: financials.salaryAccrued,

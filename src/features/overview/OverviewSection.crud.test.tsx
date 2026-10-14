@@ -14,7 +14,7 @@ describe("Overview page — matches the old app's business logic", () => {
     vi.restoreAllMocks();
   });
 
-  it("KPI cards (Gross/Net/My€/Unpaid/Income) update automatically as data changes", async () => {
+  it("KPI cards (თანხა/ხარჯი/My€/Unpaid/Income) update automatically as data changes", async () => {
     const user = userEvent.setup();
     mockModalPrompt("Overview Group");
 
@@ -38,10 +38,10 @@ describe("Overview page — matches the old app's business logic", () => {
     const grossInput = within(table).getAllByPlaceholderText("0")[0];
     await user.type(grossInput, "1000");
 
-    // Default group rate is 13.5%, Net not entered -> Gross is the My€ base,
-    // and the same row is "Unpaid" (Gross entered, Net not entered).
+    // Default group rate is 13.5%; Expense not entered -> the row is "Unpaid"
+    // (legacy rate-based logic, unchanged).
     await waitFor(() => {
-      const grossKpi = within(overviewCard).getByText("Gross").parentElement!;
+      const grossKpi = within(overviewCard).getByText("თანხა").parentElement!;
       expect(grossKpi).toHaveTextContent("1000");
     });
 

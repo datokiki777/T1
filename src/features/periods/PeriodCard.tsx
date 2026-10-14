@@ -188,8 +188,8 @@ export function PeriodCard({ periodId }: { periodId: string }) {
               <thead>
                 <tr>
                   <th>Customer</th>
-                  <th>Gross</th>
-                  <th>Net</th>
+                  <th>თანხა</th>
+                  <th>ხარჯი</th>
                   <th>City</th>
                   <th>Done</th>
                   <th>Actions</th>
@@ -209,11 +209,11 @@ export function PeriodCard({ periodId }: { periodId: string }) {
               <tfoot>
                 <tr>
                   <td className={styles.totalLabel}>Total</td>
-                  <td data-testid="period-total-gross">
-                    <span className="js-money">{formatMoney(totals.gross)}</span>
+                  <td data-testid="period-total-amount">
+                    <span className="js-money">{formatMoney(totals.amount)}</span>
                   </td>
-                  <td data-testid="period-total-net">
-                    <span className="js-money">{formatMoney(totals.net)}</span>
+                  <td data-testid="period-total-expense">
+                    <span className="js-money">{formatMoney(totals.expense)}</span>
                   </td>
                   <td colSpan={3}>
                     My €:{" "}

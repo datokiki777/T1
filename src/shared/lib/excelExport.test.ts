@@ -35,8 +35,8 @@ function makeRow(overrides: Partial<ClientRow> = {}): ClientRow {
     id: "r1",
     periodId: "p1",
     customer: "Acme",
-    gross: "1234.56",
-    net: "",
+    amount: "1234.56",
+    expense: "",
     city: "Tbilisi",
     status: "none",
     comment: "call back",
@@ -68,8 +68,8 @@ describe("buildExcelRows", () => {
   });
 
   it("rounds fractional amounts to whole numbers — the app doesn't support cents", () => {
-    const rows = buildExcelRows([makeGroup()], [makePeriod()], [makeRow({ gross: "1234.56" })]);
-    expect(rows[0].Gross).toBe(1235);
+    const rows = buildExcelRows([makeGroup()], [makePeriod()], [makeRow({ amount: "1234.56" })]);
+    expect(rows[0].Amount).toBe(1235);
   });
 
   it("marks an archived group's name with the archive icon", () => {
@@ -110,12 +110,12 @@ describe("buildExcelRows", () => {
 describe("buildExcelSummary", () => {
   it("aggregates totals and status counts per group", () => {
     const rows = [
-      makeRow({ id: "r1", gross: "1000", status: "done" }),
-      makeRow({ id: "r2", gross: "500", status: "fail" }),
+      makeRow({ id: "r1", amount: "1000", status: "done" }),
+      makeRow({ id: "r2", amount: "500", status: "fail" }),
     ];
     const summary = buildExcelSummary([makeGroup()], [makePeriod()], rows);
     expect(summary).toHaveLength(1);
-    expect(summary[0].Gross).toBe(1500);
+    expect(summary[0].Amount).toBe(1500);
     expect(summary[0].Done).toBe(1);
     expect(summary[0].Fail).toBe(1);
     expect(summary[0].Periods).toBe(1);
@@ -125,7 +125,7 @@ describe("buildExcelSummary", () => {
   it("computes salary/income the same way as computeGroupFinancials", () => {
     const group = makeGroup({ defaultSalary: 400 }); // 100/week
     const period = makePeriod({ fromDate: "2026-01-01", toDate: "2026-01-07", paidWeeks: 0 });
-    const rows = [makeRow({ gross: "1000" })];
+    const rows = [makeRow({ amount: "1000" })];
     const summary = buildExcelSummary([group], [period], rows);
     expect(summary[0].SalaryAccrued).toBeCloseTo(100);
     expect(summary[0].Income).toBeCloseTo(summary[0].Unpaid - summary[0].SalaryRemaining);
@@ -135,7 +135,7 @@ describe("buildExcelSummary", () => {
     const summary = buildExcelSummary([makeGroup()], [], []);
     expect(summary).toHaveLength(1);
     expect(summary[0].Periods).toBe(0);
-    expect(summary[0].Gross).toBe(0);
+    expect(summary[0].Amount).toBe(0);
   });
 
   it("carries the group's own CurrentCarNumber, blank when unset", () => {

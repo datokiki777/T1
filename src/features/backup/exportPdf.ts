@@ -64,8 +64,8 @@ export async function exportToPdf() {
     styles: { fontSize: 10 },
     body: [
       ["Groups", String(groups.length)],
-      ["Gross", formatMoney(grand.gross)],
-      ["Net", formatMoney(grand.net)],
+      ["Amount", formatMoney(grand.amount)],
+      ["Expense", formatMoney(grand.expense)],
       ["My €", formatMoney(grand.myEur)],
       ["Unpaid", formatMoney(grand.unpaid)],
       ["Income", formatMoney(grand.income)],
@@ -106,8 +106,8 @@ export async function exportToPdf() {
       styles: { fontSize: 9 },
       body: [
         [
-          `Gross: ${formatMoney(financials.gross)}`,
-          `Net: ${formatMoney(financials.net)}`,
+          `Amount: ${formatMoney(financials.amount)}`,
+          `Expense: ${formatMoney(financials.expense)}`,
           `My €: ${formatMoney(financials.myEur)}`,
           `Done ${statusCounts.done} · Fail ${statusCounts.fail} · Fixed ${statusCounts.fixed} · Wrong ${statusCounts.wrong}`,
         ],
@@ -137,7 +137,7 @@ export async function exportToPdf() {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.text(
-        `Gross: ${formatMoney(totals.gross)}   Net: ${formatMoney(totals.net)}   My €: ${formatMoney(totals.myEur)}   Clients: ${periodRows.length}`,
+        `Amount: ${formatMoney(totals.amount)}   Expense: ${formatMoney(totals.expense)}   My €: ${formatMoney(totals.myEur)}   Clients: ${periodRows.length}`,
         margin,
         y
       );
@@ -145,12 +145,12 @@ export async function exportToPdf() {
 
       autoTable(doc, {
         startY: y,
-        head: [["Client", "City", "Gross", "Net", "Status", "Comment"]],
+        head: [["Client", "City", "Amount", "Expense", "Status", "Comment"]],
         body: periodRows.map((row) => [
           row.customer.trim() || "Client",
           row.city.trim() || "—",
-          formatMoney(parseMoney(row.gross) || 0),
-          formatMoney(parseMoney(row.net) || 0),
+          formatMoney(parseMoney(row.amount) || 0),
+          formatMoney(parseMoney(row.expense) || 0),
           STATUS_LABEL[row.status] ?? "",
           row.comment.trim(),
         ]),

@@ -47,14 +47,14 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
     await user.type(grossInput, "1000");
     await user.type(cityInput, "Tbilisi");
 
-    // No Net entered yet -> My€ should be based on Gross (default rate 13.5%).
+    // No Expense entered yet -> My€ equals the Amount.
     await screen.findByDisplayValue("1000");
 
     // 4. Verify it actually persisted to IndexedDB (not just in-memory state).
     const rowsAfterGross = await db.clientRows.toArray();
     expect(rowsAfterGross).toHaveLength(1);
     expect(rowsAfterGross[0].customer).toBe("Acme Corp");
-    expect(rowsAfterGross[0].gross).toBe("1000");
+    expect(rowsAfterGross[0].amount).toBe("1000");
     expect(rowsAfterGross[0].city).toBe("Tbilisi");
 
     const periodsAfter = await db.periods.toArray();
@@ -63,19 +63,18 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
     const groupsAfter = await db.groups.toArray();
     expect(groupsAfter[0].defaultRate).toBe(13.5); // rate now lives on the group
 
-    // Expected My€ = gross (1000) * 13.5% = 135, since Net is not entered.
+    // Expected My€ = amount (1000) − expense (empty = 0) = 1000.
     await screen.findByTestId("period-total-my-eur");
-    expect(screen.getByTestId("period-total-my-eur")).toHaveTextContent("135");
+    expect(screen.getByTestId("period-total-my-eur")).toHaveTextContent("1000");
 
-    // 5. Now enter an explicit Net of "0" — My€ must become 0 (base = Net, not Gross),
-    // exactly matching the old app's semantics for an explicitly-entered zero.
-    await user.type(netInput, "0");
+    // 5. Enter an Expense of 300 — My€ becomes 1000 − 300 = 700.
+    await user.type(netInput, "300");
     await waitFor(() =>
-      expect(screen.getByTestId("period-total-my-eur")).toHaveTextContent("0")
+      expect(screen.getByTestId("period-total-my-eur")).toHaveTextContent("700")
     );
 
-    const rowsAfterNetZero = await db.clientRows.toArray();
-    expect(rowsAfterNetZero[0].net).toBe("0");
+    const rowsAfterExpense = await db.clientRows.toArray();
+    expect(rowsAfterExpense[0].expense).toBe("300");
 
     // 6. Delete the row (confirm dialog must be accepted).
     mockModalConfirm(true);
@@ -103,8 +102,8 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
     await user.type(grossInput, "500");
 
     await waitFor(() =>
-      expect(screen.getByTestId("period-total-my-eur")).toHaveTextContent("68")
-    ); // 500 * 13.5% = 67.5, rounded up to 68
+      expect(screen.getByTestId("period-total-my-eur")).toHaveTextContent("500")
+    ); // amount 500 − empty expense
 
     // Cycle status: none -> done -> fail -> fixed -> wrong
     const statusBtn = within(table).getByRole("button", { name: "—" });
@@ -210,8 +209,8 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
     const headers = within(table).getAllByRole("columnheader");
     expect(headers.map((h) => h.textContent)).toEqual([
       "Customer",
-      "Gross",
-      "Net",
+      "თანხა",
+      "ხარჯი",
       "City",
       "Done",
       "Actions",
@@ -275,33 +274,6 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
     });
   });
 
-  it("warns when Net is unusually far from Gross (missing-digit sanity check)", async () => {
-    const user = userEvent.setup();
-    mockModalPrompt("Mismatch Group");
-
-    render(<App />);
-    await screen.findByText("Select group");
-    await openGroupMenu();
-    await user.click(screen.getByRole("button", { name: "+ Group" }));
-    await user.click(screen.getByRole("button", { name: "+ New period" }));
-    await expandFirstPeriod(user);
-    await user.click(screen.getByRole("button", { name: "+ Add client" }));
-
-    const table = screen.getByRole("table");
-    const [grossInput, netInput] = within(table).getAllByPlaceholderText("0");
-    await user.type(grossInput, "1000");
-    await user.type(netInput, "100"); // 900 off — should trigger the warning
-    await user.tab();
-
-    expect(
-      await screen.findByText(/Net \(100\) looks far off from Gross \(1000\)/)
-    ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Yes, it's correct" }));
-
-    // The entered value is preserved either way — this is just a heads-up.
-    expect(netInput).toHaveValue("100");
-  });
-
   it("asks for confirmation before deleting a client row even when it's still completely empty", async () => {
     const user = userEvent.setup();
     mockModalPrompt("Empty Row Group");
@@ -316,7 +288,7 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
     await user.click(screen.getByRole("button", { name: "+ Add client" }));
 
     const table = screen.getByRole("table");
-    // Row has no name/gross/net/city/comment entered at all yet.
+    // Row has no name/amount/expense/city/comment entered at all yet.
     await user.click(within(table).getByRole("button", { name: "Remove" }));
 
     // Declined -> the row must still be there.

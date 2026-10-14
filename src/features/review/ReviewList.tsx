@@ -122,12 +122,12 @@ function ReviewGroupCard({
       <div className={styles.groupBody}>
         <div className={styles.groupKpis}>
           <div className={`${styles.kpi} ${styles.kpiGross}`}>
-            <div className={styles.kpiLabel}>Gross</div>
-              <div className={styles.kpiValue}><span className="js-money">{formatMoney(financials.gross)}</span></div>
+            <div className={styles.kpiLabel}>თანხა</div>
+              <div className={styles.kpiValue}><span className="js-money">{formatMoney(financials.amount)}</span></div>
             </div>
             <div className={`${styles.kpi} ${styles.kpiNet}`}>
-              <div className={styles.kpiLabel}>Net</div>
-              <div className={styles.kpiValue}><span className="js-money">{formatMoney(financials.net)}</span></div>
+              <div className={styles.kpiLabel}>ხარჯი</div>
+              <div className={styles.kpiValue}><span className="js-money">{formatMoney(financials.expense)}</span></div>
             </div>
             <div className={`${styles.kpi} ${styles.kpiMy}`}>
               <div className={styles.kpiLabel}>My €</div>
@@ -202,10 +202,10 @@ function ReviewPeriodCard({
         </div>
         <div className={styles.periodSums}>
           <span className={styles.badge}>
-            Gross: <b className="js-money">{formatMoney(totals.gross)}</b>
+            თანხა: <b className="js-money">{formatMoney(totals.amount)}</b>
           </span>
           <span className={styles.badge}>
-            Net: <b className="js-money">{formatMoney(totals.net)}</b>
+            ხარჯი: <b className="js-money">{formatMoney(totals.expense)}</b>
           </span>
           <span className={styles.badge}>
             My €: <b className="js-money">{formatMoney(totals.myEur)}</b>
@@ -277,8 +277,8 @@ function ReviewPeriodCard({
               )}
             </div>
             <div className={styles.clientValues}>
-              <span>Gross: <b className="js-money">{formatMoney(parseMoney(row.gross) || 0)}</b></span>
-              <span>Net: <b className="js-money">{formatMoney(parseMoney(row.net) || 0)}</b></span>
+              <span>თანხა: <b className="js-money">{formatMoney(parseMoney(row.amount) || 0)}</b></span>
+              <span>ხარჯი: <b className="js-money">{formatMoney(parseMoney(row.expense) || 0)}</b></span>
             </div>
           </div>
         ))}

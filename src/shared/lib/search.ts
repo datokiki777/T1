@@ -15,8 +15,8 @@ export interface SearchIndexItem {
   customer: string;
   city: string;
   comment: string;
-  gross: string; // formatted for display
-  net: string;
+  amount: string; // formatted for display
+  expense: string;
   status: DoneStatus;
 }
 
@@ -55,8 +55,8 @@ export function buildSearchIndex(
       customer,
       city,
       comment,
-      gross: formatMoney(parseMoney(row.gross) || 0),
-      net: formatMoney(parseMoney(row.net) || 0),
+      amount: formatMoney(parseMoney(row.amount) || 0),
+      expense: formatMoney(parseMoney(row.expense) || 0),
       status: row.status,
     });
   }

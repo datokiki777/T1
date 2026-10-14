@@ -35,8 +35,8 @@ function makeRow(overrides: Partial<ClientRow> = {}): ClientRow {
     id: "r1",
     periodId: "p1",
     customer: "Acme Corp",
-    gross: "100",
-    net: "",
+    amount: "100",
+    expense: "",
     city: "Tbilisi",
     status: "none",
     comment: "",
@@ -80,10 +80,10 @@ describe("buildSearchIndex", () => {
     expect(buildSearchIndex([makeGroup()], [makePeriod()], rows)).toHaveLength(0);
   });
 
-  it("formats gross/net for display with no cents", () => {
-    const index = buildSearchIndex([makeGroup()], [makePeriod()], [makeRow({ gross: "1500" })]);
-    expect(index[0].gross).toBe("1500");
-    expect(index[0].net).toBe("0");
+  it("formats amount/expense for display with no cents", () => {
+    const index = buildSearchIndex([makeGroup()], [makePeriod()], [makeRow({ amount: "1500" })]);
+    expect(index[0].amount).toBe("1500");
+    expect(index[0].expense).toBe("0");
   });
 });
 
