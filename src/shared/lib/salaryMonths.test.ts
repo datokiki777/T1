@@ -115,4 +115,48 @@ describe("computeGroupSalaryMonths", () => {
     expect(r.months).toEqual([]);
     expect(r.anchorDay).toBeNull();
   });
+
+  it("anchor comes from clients' own visit dates, not from an earlier period start", () => {
+    const p = { ...period, fromDate: "2026-04-01" };
+    const r = computeGroupSalaryMonths(group, [p], [row({ visitDate: "2026-04-07" }), row({})]);
+    expect(r.anchorDay).toBe(7);
+  });
+
+  it("a client without a date joins the month of its nearest dated neighbour in the same period", () => {
+    const p = { ...period, fromDate: "2026-01-01" };
+    const r = computeGroupSalaryMonths(
+      group,
+      [p],
+      [
+        row({ id: "a", createdAt: 1, visitDate: "2026-01-07", amount: "100" }),
+        row({ id: "b", createdAt: 2, amount: "200" }), // no date -> neighbour a (Jan)
+        row({ id: "c", createdAt: 3, visitDate: "2026-03-09", amount: "400" }),
+      ]
+    );
+    const jan = r.months.find((m) => m.key === "2026-01")!;
+    expect(jan.amount).toBe(300); // a + b
+    expect(r.months.find((m) => m.key === "2026-03")!.amount).toBe(400);
+    expect(r.undatedRows).toBe(0);
+  });
+
+  it("with no dated neighbour, the client is placed by its period's date", () => {
+    const p1 = { ...period, id: "p1", fromDate: "2026-02-05" };
+    const p2 = { ...period, id: "p2", fromDate: "2026-04-05" };
+    const r = computeGroupSalaryMonths(
+      group,
+      [p1, p2],
+      [
+        row({ periodId: "p1", visitDate: "2026-02-05", amount: "100" }),
+        row({ periodId: "p2", amount: "700" }), // nothing dated in p2 -> p2's own date (Apr 5, month Apr)
+      ]
+    );
+    expect(r.anchorDay).toBe(5);
+    expect(r.months.find((m) => m.key === "2026-04")!.amount).toBe(700);
+  });
+
+  it("with no date anywhere the client is reported as undated", () => {
+    const r = computeGroupSalaryMonths(group, [period], [row({})]);
+    expect(r.undatedRows).toBe(1);
+    expect(r.months).toEqual([]);
+  });
 });

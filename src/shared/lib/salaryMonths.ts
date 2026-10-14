@@ -13,8 +13,11 @@ import { parseDateOnly } from "./dates";
  *
  * A client belongs to exactly one salary month: the one that contains the
  * MAJORITY of its days (visitDate .. visitDate + visitDays − 1). On a tie
- * the earlier month wins. A client with no visit date falls back to its
- * period's start date; with neither, it can't be placed ("undated").
+ * the earlier month wins. A client with no visit date is placed, in order:
+ *   1. in the salary month of the nearest neighbouring client (same
+ *      period, list order) that has a visit date;
+ *   2. otherwise by its period's own date (start date, else end date);
+ *   3. otherwise it can't be placed ("undated").
  *
  * A salary month's key is the calendar month it STARTS in ("2026-10" =
  * 7 Oct → 6 Nov).
@@ -62,8 +65,8 @@ export function rowSpanDays(row: Pick<ClientRow, "visitDays">): number {
   return Math.min(5, Math.max(1, Number.isFinite(n) ? n : 1));
 }
 
-function rowStartDate(row: ClientRow, period: Period | undefined): Date | null {
-  return parseDateOnly(row.visitDate) ?? parseDateOnly(period?.fromDate ?? null);
+function periodDate(period: Period | undefined): Date | null {
+  return parseDateOnly(period?.fromDate ?? null) ?? parseDateOnly(period?.toDate ?? null);
 }
 
 function effectiveAnchor(year: number, monthIndex0: number, anchorDay: number): number {
@@ -112,25 +115,68 @@ export function computeGroupSalaryMonths(
   const periodById = new Map(groupPeriods.map((p) => [p.id, p]));
   const salary = Math.max(0, Math.round(group.defaultSalary || 0));
 
-  const candidates: { row: ClientRow; start: Date | null }[] = [];
+  interface Cand {
+    row: ClientRow;
+    own: Date | null; // the client's own visit date
+    byPeriod: Date | null; // its period's date
+  }
+  const cands: Cand[] = [];
   for (const row of rows) {
     const period = periodById.get(row.periodId);
     if (!period || row.status === "wrong") continue;
     if (!rowAmounts(row).hasMoney) continue;
-    candidates.push({ row, start: rowStartDate(row, period) });
+    cands.push({ row, own: parseDateOnly(row.visitDate), byPeriod: periodDate(period) });
   }
 
-  const dated = candidates.filter((c): c is { row: ClientRow; start: Date } => c.start !== null);
-  const undatedRows = candidates.length - dated.length;
-  if (!dated.length) return { anchorDay: null, months: [], undatedRows };
-
-  const earliest = dated.reduce((min, c) => (c.start < min ? c.start : min), dated[0].start);
+  // Anchor: the earliest client's own visit date; only if NO client has one,
+  // fall back to the earliest period date.
+  const ownDates = cands.map((c) => c.own).filter((d): d is Date => d !== null);
+  const periodDates = cands.map((c) => c.byPeriod).filter((d): d is Date => d !== null);
+  const pool = ownDates.length ? ownDates : periodDates;
+  if (!pool.length) return { anchorDay: null, months: [], undatedRows: cands.length };
+  const earliest = pool.reduce((min, d) => (d < min ? d : min), pool[0]);
   const anchorDay = earliest.getDate();
 
-  const placed = dated.map((c) => ({
-    row: c.row,
-    idx: assignSalaryMonthIndex(c.start, rowSpanDays(c.row), anchorDay),
-  }));
+  // 1) clients with their own date.
+  const idxByRowId = new Map<string, number>();
+  for (const c of cands) {
+    if (c.own) {
+      idxByRowId.set(c.row.id, assignSalaryMonthIndex(c.own, rowSpanDays(c.row), anchorDay));
+    }
+  }
+
+  // 2) clients without a date: nearest dated neighbour in the same period
+  //    (list order; the previous one wins a distance tie), else the period's date.
+  const byPeriodId = new Map<string, Cand[]>();
+  for (const c of cands) {
+    const list = byPeriodId.get(c.row.periodId) ?? [];
+    list.push(c);
+    byPeriodId.set(c.row.periodId, list);
+  }
+  for (const list of byPeriodId.values()) {
+    list.sort((a, b) => a.row.createdAt - b.row.createdAt || a.row.id.localeCompare(b.row.id));
+    list.forEach((c, i) => {
+      if (c.own) return;
+      let found: number | undefined;
+      for (let dist = 1; dist < list.length && found === undefined; dist++) {
+        const prev = list[i - dist];
+        const next = list[i + dist];
+        if (prev?.own) found = idxByRowId.get(prev.row.id);
+        else if (next?.own) found = idxByRowId.get(next.row.id);
+      }
+      if (found === undefined && c.byPeriod) {
+        found = assignSalaryMonthIndex(c.byPeriod, rowSpanDays(c.row), anchorDay);
+      }
+      if (found !== undefined) idxByRowId.set(c.row.id, found);
+    });
+  }
+
+  const placed = cands
+    .filter((c) => idxByRowId.has(c.row.id))
+    .map((c) => ({ row: c.row, idx: idxByRowId.get(c.row.id)! }));
+  const undatedRows = cands.length - placed.length;
+  if (!placed.length) return { anchorDay, months: [], undatedRows };
+
   const minIdx = Math.min(...placed.map((p) => p.idx));
   const maxIdx = Math.max(...placed.map((p) => p.idx));
 
