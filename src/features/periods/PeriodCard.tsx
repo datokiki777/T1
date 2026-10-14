@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAppStore } from "../../app/store";
-import { computePeriodTotals, formatMoney } from "../../shared/lib/calc";
+import { computePeriodTotalsForGroup, formatMoney } from "../../shared/lib/calc";
 import { formatPeriodDate, dateRangesOverlap, isPeriodCurrentToday } from "../../shared/lib/dates";
 import { confirmDialog } from "../../shared/modal/modalStore";
 import { getPeriodById, getGroupById, getRowsForPeriod } from "../../shared/lib/entityLookup";
@@ -47,7 +47,7 @@ export function PeriodCard({ periodId }: { periodId: string }) {
 
   if (!period || !group) return null;
 
-  const totals = computePeriodTotals(period, rows);
+  const totals = computePeriodTotalsForGroup(period, group, allPeriods, allClientRows);
 
   async function handleRemovePeriod() {
     if (

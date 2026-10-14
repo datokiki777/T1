@@ -222,8 +222,11 @@ describe("Legacy migration MUST import archived groups too, not just the active 
     const grand = computeGrandTotals(groups, periods, clientRows);
     expect(grand.amount).toBe(4030);
     expect(grand.expense).toBe(1588);
-    // My€ = amount − expense = 4030 − 1588
-    expect(grand.myEur).toBe(2442);
+    // My€ = amount − expense − salary owed for the recorded days
+    // (4030 − 1588 = 2442 before salary).
+    expect(grand.amount - grand.expense).toBe(2442);
+    expect(grand.salary).toBeGreaterThan(0);
+    expect(grand.myEur).toBeCloseTo(2442 - grand.salary, 6);
 
     // The archived group's own financials, in isolation, must also match —
     // proving archived-group money isn't silently dropped from totals.
@@ -231,7 +234,7 @@ describe("Legacy migration MUST import archived groups too, not just the active 
     const archivedFinancials = computeGroupFinancials(archivedGroup, periods, clientRows);
     expect(archivedFinancials.amount).toBe(800);
     expect(archivedFinancials.expense).toBe(600);
-    expect(archivedFinancials.myEur).toBe(200); // 800 − 600
+    expect(archivedFinancials.myEur).toBeCloseTo(200 - archivedFinancials.salary, 6); // 800 − 600 − salary
   });
 });
 

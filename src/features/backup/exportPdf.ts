@@ -7,7 +7,7 @@ import { getRowsForPeriod } from "../../shared/lib/entityLookup";
 import {
   computeGrandTotals,
   computeGroupFinancials,
-  computePeriodTotals,
+  computePeriodTotalsForGroup,
   computeStatusCounts,
   formatMoney,
 } from "../../shared/lib/calc";
@@ -124,7 +124,7 @@ export async function exportToPdf() {
       }
 
       const periodRows = getRowsForPeriod(clientRows, period.id);
-      const totals = computePeriodTotals(period, clientRows);
+      const totals = computePeriodTotalsForGroup(period, group, periods, clientRows);
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);

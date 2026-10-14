@@ -58,8 +58,11 @@ export interface ClientRow {
 export interface PeriodTotals {
   amount: number;
   expense: number;
+  /** Amount − Expense − salary owed for the recorded days. */
   myEur: number;
   unpaid: number;
+  /** Salary owed for the days of the recorded clients (subtracted in My €). */
+  salary: number;
 }
 
 export interface StatusCounts {

@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { useAppStore } from "../../app/store";
 import {
   computeGroupFinancials,
-  computePeriodTotals,
+  computePeriodTotalsForGroup,
   computeStatusCounts,
   formatMoney,
 } from "../../shared/lib/calc";
@@ -145,6 +145,8 @@ function ReviewGroupCard({
               period={period}
               rows={getRowsForPeriod(clientRows, period.id)}
               group={group}
+              groupPeriods={periods}
+              allRows={clientRows}
             />
           ))}
         </div>
@@ -156,12 +158,19 @@ function ReviewPeriodCard({
   period,
   rows,
   group,
+  groupPeriods,
+  allRows,
 }: {
   period: Period;
   rows: ClientRow[];
   group: Group;
+  groupPeriods: Period[];
+  allRows: ClientRow[];
 }) {
-  const totals = useMemo(() => computePeriodTotals(period, rows), [period, rows]);
+  const totals = useMemo(
+    () => computePeriodTotalsForGroup(period, group, groupPeriods, allRows),
+    [period, group, groupPeriods, allRows]
+  );
   const openClientInEdit = useOpenClientInEdit();
   const pressTimer = useRef<number | null>(null);
   const [visitModalRowId, setVisitModalRowId] = useState<string | null>(null);

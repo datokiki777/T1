@@ -17,12 +17,14 @@ import { computeGroupSalaryMonths, rowAmounts } from "./salaryMonths";
  * - Amount/Expense are free-text; "" (not entered) is different from "0".
  * - The app doesn't support cents: values are rounded to whole numbers the
  *   moment they're parsed.
- * - "My €" per row = Amount − Expense (an empty Expense counts as 0).
+ * - "My €" = Amount − Expense (an empty Expense counts as 0) − `salary`,
+ *   the salary owed for the days of the period's clients (see salaryMonths.ts).
  * - "Unpaid" = sum of the Amount of rows whose status is "unpaid".
  */
 export function computePeriodTotals(
   period: Pick<Period, "id">,
-  rows: ClientRow[]
+  rows: ClientRow[],
+  salary = 0
 ): PeriodTotals {
   const periodRows = rows.filter((r) => r.periodId === period.id);
 
@@ -42,7 +44,18 @@ export function computePeriodTotals(
     if (row.status === "unpaid") unpaid += m.amount;
   }
 
-  return { amount, expense, myEur, unpaid };
+  return { amount, expense, myEur: myEur - salary, unpaid, salary };
+}
+
+/** Period totals including the salary owed for the period's recorded days. */
+export function computePeriodTotalsForGroup(
+  period: Pick<Period, "id">,
+  group: Group,
+  periods: Period[],
+  rows: ClientRow[]
+): PeriodTotals {
+  const sm = computeGroupSalaryMonths(group, periods, rows);
+  return computePeriodTotals(period, rows, sm.periodSalary[period.id] ?? 0);
 }
 
 /**
@@ -57,25 +70,25 @@ export function computeGroupFinancials(
 ): GroupFinancials {
   const groupPeriods = getPeriodsForGroup(periods, group.id);
 
-  const totals = groupPeriods.reduce(
+  const base = groupPeriods.reduce(
     (acc, p) => {
       const t = computePeriodTotals(p, rows);
       acc.amount += t.amount;
       acc.expense += t.expense;
-      acc.myEur += t.myEur;
       acc.unpaid += t.unpaid;
       return acc;
     },
-    { amount: 0, expense: 0, myEur: 0, unpaid: 0 }
+    { amount: 0, expense: 0, unpaid: 0 }
   );
 
   const sm = computeGroupSalaryMonths(group, periods, rows);
   const salary = sm.months.reduce((sum, m) => sum + m.salary, 0);
   const income = sm.months.reduce((sum, m) => sum + m.income, 0);
+  // My € = Amount − Expense − salary owed for the recorded days.
+  const totals = { ...base, myEur: base.amount - base.expense - salary, salary };
 
   return {
     ...totals,
-    salary,
     income,
     salaryMonths: sm.months.length,
     undatedRows: sm.undatedRows,

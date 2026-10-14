@@ -19,6 +19,9 @@ import { parseDateOnly } from "./dates";
  *   2. otherwise by its period's own date (start date, else end date);
  *   3. otherwise it can't be placed ("undated").
  *
+ * My € of a salary month = Amount − Expense − salary owed for the days of
+ * ALL recorded clients (same daily rate, same once-per-day rule).
+ *
  * Income of a salary month =
  *   Unpaid − (Expense of the unpaid clients) − (salary share), where the
  *   salary share = monthly salary / length of that salary month × the number
@@ -40,7 +43,11 @@ export interface SalaryMonthStats {
   unpaidExpense: number;
   /** Days covered by the unpaid clients. */
   unpaidDays: number;
-  /** Salary share owed for those days. */
+  /** Salary owed for the unpaid clients' days (used by Income). */
+  unpaidSalary: number;
+  /** Days covered by all recorded clients. */
+  days: number;
+  /** Salary owed for all recorded days (subtracted in My €). */
   salary: number;
   income: number;
   clients: number;
@@ -51,6 +58,8 @@ export interface GroupSalaryMonths {
   months: SalaryMonthStats[];
   /** Non-"wrong" clients with money entered but no usable date. */
   undatedRows: number;
+  /** Salary owed for each period's own recorded days (periodId -> amount). */
+  periodSalary: Record<string, number>;
 }
 
 export function rowAmounts(row: Pick<ClientRow, "amount" | "expense">): {
@@ -162,7 +171,7 @@ export function computeGroupSalaryMonths(
   const ownDates = cands.map((c) => c.own).filter((d): d is Date => d !== null);
   const periodDates = cands.map((c) => c.byPeriod).filter((d): d is Date => d !== null);
   const pool = ownDates.length ? ownDates : periodDates;
-  if (!pool.length) return { anchorDay: null, months: [], undatedRows: cands.length };
+  if (!pool.length) return { anchorDay: null, months: [], undatedRows: cands.length, periodSalary: {} };
   const earliest = pool.reduce((min, d) => (d < min ? d : min), pool[0]);
   const anchorDay = earliest.getDate();
 
@@ -204,7 +213,7 @@ export function computeGroupSalaryMonths(
     .filter((c) => idxByRowId.has(c.row.id))
     .map((c) => ({ row: c.row, idx: idxByRowId.get(c.row.id)! }));
   const undatedRows = cands.length - placed.length;
-  if (!placed.length) return { anchorDay, months: [], undatedRows };
+  if (!placed.length) return { anchorDay, months: [], undatedRows, periodSalary: {} };
 
   const minIdx = Math.min(...placed.map((p) => p.idx));
   const maxIdx = Math.max(...placed.map((p) => p.idx));
@@ -219,14 +228,36 @@ export function computeGroupSalaryMonths(
       unpaid: 0,
       unpaidExpense: 0,
       unpaidDays: 0,
+      unpaidSalary: 0,
+      days: 0,
       salary: 0,
       income: 0,
       clients: 0,
     });
   }
-  const dayNumbers = new Map<number, Set<number>>(); // idx -> distinct unpaid days
-  const extraDays = new Map<number, number>(); // idx -> days of unpaid clients with no own date
   const dayNo = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+  // Days covered, per salary month: a day shared by several clients counts
+  // once; a client with no own visit date adds its own days.
+  interface DayBook {
+    set: Set<number>;
+    extra: number;
+  }
+  const newBook = (): DayBook => ({ set: new Set<number>(), extra: 0 });
+  const unpaidBooks = new Map<number, DayBook>(); // idx -> unpaid clients' days
+  const allBooks = new Map<number, DayBook>(); // idx -> all clients' days
+  const periodBooks = new Map<string, Map<number, DayBook>>(); // periodId -> idx -> days
+  const book = (m: Map<number, DayBook>, idx: number): DayBook => {
+    let b = m.get(idx);
+    if (!b) {
+      b = newBook();
+      m.set(idx, b);
+    }
+    return b;
+  };
+  const addDays = (b: DayBook, own: Date | null, days: number) => {
+    if (own) for (let i = 0; i < days; i++) b.set.add(dayNo(own) + i);
+    else b.extra += days;
+  };
 
   for (const { row, idx } of placed) {
     const stats = byIdx.get(idx)!;
@@ -234,35 +265,53 @@ export function computeGroupSalaryMonths(
     stats.amount += amount;
     stats.expense += expense;
     stats.myEur += amount - expense;
+    const own = parseDateOnly(row.visitDate);
+    const days = rowSpanDays(row);
+    addDays(book(allBooks, idx), own, days);
+    let pb = periodBooks.get(row.periodId);
+    if (!pb) {
+      pb = new Map();
+      periodBooks.set(row.periodId, pb);
+    }
+    addDays(book(pb, idx), own, days);
     if (row.status === "unpaid") {
       stats.unpaid += amount;
       stats.unpaidExpense += expense;
-      const own = parseDateOnly(row.visitDate);
-      const days = rowSpanDays(row);
-      if (own) {
-        const set = dayNumbers.get(idx) ?? new Set<number>();
-        for (let i = 0; i < days; i++) set.add(dayNo(own) + i);
-        dayNumbers.set(idx, set);
-      } else {
-        extraDays.set(idx, (extraDays.get(idx) ?? 0) + days);
-      }
+      addDays(book(unpaidBooks, idx), own, days);
     }
     stats.clients += 1;
   }
 
+  const countDays = (b: DayBook | undefined) => (b ? b.set.size + b.extra : 0);
+  const shareFor = (idx: number, days: number) => {
+    const length = salaryMonthLength(idx, anchorDay);
+    return length > 0 ? Math.min(salary, (salary / length) * days) : 0;
+  };
+
   const months = [...byIdx.entries()]
     .sort((a, b) => a[0] - b[0])
     .map(([idx, st]) => {
-      const unpaidDays = (dayNumbers.get(idx)?.size ?? 0) + (extraDays.get(idx) ?? 0);
-      const length = salaryMonthLength(idx, anchorDay);
-      const share = length > 0 ? Math.min(salary, (salary / length) * unpaidDays) : 0;
+      const unpaidDays = countDays(unpaidBooks.get(idx));
+      const days = countDays(allBooks.get(idx));
+      const unpaidSalary = shareFor(idx, unpaidDays);
+      const monthSalary = shareFor(idx, days);
       return {
         ...st,
         unpaidDays,
-        salary: share,
-        income: st.unpaid - st.unpaidExpense - share,
+        unpaidSalary,
+        days,
+        salary: monthSalary,
+        myEur: st.amount - st.expense - monthSalary,
+        income: st.unpaid - st.unpaidExpense - unpaidSalary,
       };
     });
 
-  return { anchorDay, months, undatedRows };
+  const periodSalary: Record<string, number> = {};
+  for (const [periodId, perIdx] of periodBooks) {
+    let total = 0;
+    for (const [idx, b] of perIdx) total += shareFor(idx, countDays(b));
+    periodSalary[periodId] = total;
+  }
+
+  return { anchorDay, months, undatedRows, periodSalary };
 }

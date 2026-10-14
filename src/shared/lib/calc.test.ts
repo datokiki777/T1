@@ -154,3 +154,15 @@ describe("formatMoney — the app never shows cents", () => {
     expect(formatMoney(1234.999)).not.toContain(".");
   });
 });
+
+describe("computePeriodTotals — salary is subtracted from My €", () => {
+  it("My€ = Amount − Expense − salary", () => {
+    const period = makePeriod();
+    const rows = [makeRow({ amount: "1000", expense: "200" })];
+    const totals = computePeriodTotals(period, rows, 150);
+    expect(totals.amount).toBe(1000);
+    expect(totals.expense).toBe(200);
+    expect(totals.salary).toBe(150);
+    expect(totals.myEur).toBe(650);
+  });
+});
