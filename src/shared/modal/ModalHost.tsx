@@ -64,6 +64,7 @@ export function ModalHost() {
             value={promptValue}
             onChange={(e) => setPromptValue(e.target.value)}
             aria-label={request.message}
+            inputMode={request.inputMode}
             autoComplete="chrome-off"
             autoCorrect="off"
             spellCheck={false}

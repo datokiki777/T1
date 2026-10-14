@@ -259,3 +259,33 @@ tr[data-row-id] td:first-child {
 .wrongRow .status_wrong {
   text-decoration: line-through;
 }
+
+/* Expense input with the "+" (add another cost) and undo buttons. */
+.moneyField {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.moneyField .input {
+  min-width: 0;
+}
+
+.addExpenseBtn,
+.undoExpenseBtn {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 196, 64, 0.16);
+  color: var(--text);
+  font-size: var(--font-md);
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.undoExpenseBtn {
+  background: rgba(255, 255, 255, 0.08);
+}

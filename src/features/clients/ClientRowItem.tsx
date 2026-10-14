@@ -1,7 +1,8 @@
 import { Fragment, useState } from "react";
 import { useAppStore } from "../../app/store";
 import type { DoneStatus } from "../../shared/types/domain";
-import { confirmDialog } from "../../shared/modal/modalStore";
+import { confirmDialog, promptDialog } from "../../shared/modal/modalStore";
+import { parseMoney } from "../../shared/lib/money";
 import { daysBetweenInclusive, formatDateForRange, parseDateOnly } from "../../shared/lib/dates";
 import styles from "./ClientRowItem.module.css";
 
@@ -35,6 +36,8 @@ export function ClientRowItem({
   const [commentOpen, setCommentOpen] = useState(false);
   const [visitPanelOpen, setVisitPanelOpen] = useState(false);
   const highlightPeriodDates = useAppStore((s) => s.highlightPeriodDates);
+  // Expense value from before the last "+" add, so it can be undone.
+  const [expenseUndo, setExpenseUndo] = useState<string | null>(null);
 
   if (!row) return null;
 
@@ -47,6 +50,27 @@ export function ClientRowItem({
       return;
     }
     removeRow(row.id);
+  }
+
+  // "+" next to Expense: add another cost on top of what is already there
+  // (100 + 36 + 45 ...) without retyping the total.
+  async function handleAddExpense() {
+    if (!row) return;
+    const answer = await promptDialog(
+      `Add to expense${row.expense ? ` (now ${row.expense})` : ""}`,
+      "",
+      { confirmLabel: "Add", inputMode: "numeric" }
+    );
+    if (answer === null) return;
+    const added = Math.round(parseMoney(answer));
+    if (!Number.isFinite(added) || added <= 0) return;
+
+    // Read the current value fresh — it may have changed while the dialog was open.
+    const fresh = useAppStore.getState().clientRows.find((r) => r.id === row.id);
+    if (!fresh) return;
+    const current = Math.round(parseMoney(fresh.expense));
+    setExpenseUndo(fresh.expense);
+    updateRow(row.id, { expense: String((Number.isFinite(current) ? current : 0) + added) });
   }
 
   // Saves the visit date/days, then — if the client's days run outside its
@@ -154,18 +178,46 @@ export function ClientRowItem({
         />
       </td>
       <td>
-        <input
-          className={styles.input}
-          type="text"
-          inputMode="numeric"
-          value={row.expense}
-          placeholder="0"
-          autoComplete="chrome-off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          onChange={(e) => updateRow(row.id, { expense: e.target.value.replace(/\D/g, "") })}
-        />
+        <div className={styles.moneyField}>
+          <input
+            className={styles.input}
+            type="text"
+            inputMode="numeric"
+            value={row.expense}
+            placeholder="0"
+            autoComplete="chrome-off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            onChange={(e) => {
+              setExpenseUndo(null);
+              updateRow(row.id, { expense: e.target.value.replace(/\D/g, "") });
+            }}
+          />
+          <button
+            type="button"
+            className={styles.addExpenseBtn}
+            aria-label="Add to expense"
+            title="Add to expense"
+            onClick={handleAddExpense}
+          >
+            +
+          </button>
+          {expenseUndo !== null && (
+            <button
+              type="button"
+              className={styles.undoExpenseBtn}
+              aria-label="Undo last expense add"
+              title="Undo last expense add"
+              onClick={() => {
+                updateRow(row.id, { expense: expenseUndo });
+                setExpenseUndo(null);
+              }}
+            >
+              ↶
+            </button>
+          )}
+        </div>
       </td>
       <td>
         <input

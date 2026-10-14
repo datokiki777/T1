@@ -13,6 +13,7 @@ export type ModalRequest =
       kind: "prompt";
       message: string;
       defaultValue: string;
+      inputMode?: "numeric" | "decimal" | "text";
       confirmLabel: string;
       cancelLabel: string;
       resolve: (value: string | null) => void;
@@ -58,13 +59,14 @@ export function confirmDialog(
 export function promptDialog(
   message: string,
   defaultValue = "",
-  opts?: { confirmLabel?: string; cancelLabel?: string }
+  opts?: { confirmLabel?: string; cancelLabel?: string; inputMode?: "numeric" | "decimal" | "text" }
 ): Promise<string | null> {
   return new Promise((resolve) => {
     useModalStore.getState().open({
       kind: "prompt",
       message,
       defaultValue,
+      inputMode: opts?.inputMode,
       confirmLabel: opts?.confirmLabel ?? "OK",
       cancelLabel: opts?.cancelLabel ?? "Cancel",
       resolve,
