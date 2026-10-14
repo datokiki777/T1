@@ -270,3 +270,22 @@
 .totalLabel {
   font-weight: 700;
 }
+
+/* Flashes yellow (like a jumped-to client row) when the app sends the person
+   here to correct the period dates. */
+.dateFieldsHighlight {
+  border-radius: var(--radius-md, 10px);
+  animation: dateFieldsFlash 3.5s ease-out;
+}
+
+@keyframes dateFieldsFlash {
+  0% {
+    background: rgba(255, 196, 64, 0.65);
+  }
+  55% {
+    background: rgba(255, 196, 64, 0.65);
+  }
+  100% {
+    background: transparent;
+  }
+}

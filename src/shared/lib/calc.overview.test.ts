@@ -69,21 +69,21 @@ describe("computeGroupFinancials — monthly salary and Income", () => {
     expect(t.unpaid).toBe(200);
   });
 
-  it("charges one monthly salary per salary month, including empty months in between", () => {
-    const group = makeGroup({ defaultSalary: 1000 });
+  it("salary share = monthly salary / salary-month length × days of the unpaid clients", () => {
+    const group = makeGroup({ defaultSalary: 3100 });
     const p1 = makePeriod();
     const rows = [
-      makeRow(p1.id, { amount: "100", visitDate: "2026-01-07", visitDays: 1 }),
-      makeRow(p1.id, { amount: "100", visitDate: "2026-03-10", visitDays: 1 }),
+      makeRow(p1.id, { amount: "500", status: "unpaid", visitDate: "2026-01-07", visitDays: 2 }),
     ];
     const t = computeGroupFinancials(group, [p1], rows);
-    // anchor = 7th: months Jan7-Feb6, Feb7-Mar6, Mar7-Apr6 -> 3 months
-    expect(t.salaryMonths).toBe(3);
-    expect(t.salary).toBe(3000);
+    // anchor 7: Jan 7 → Feb 7 = 31 days -> 3100/31 = 100 per day × 2 days
+    expect(t.salaryMonths).toBe(1);
+    expect(t.salary).toBeCloseTo(200);
+    expect(t.income).toBeCloseTo(500 - 200);
   });
 
-  it("income = unpaid − total expense − monthly salary", () => {
-    const group = makeGroup({ defaultSalary: 100 });
+  it("income = unpaid − expense of the UNPAID clients − salary share (other clients' expense is not subtracted)", () => {
+    const group = makeGroup({ defaultSalary: 3100 });
     const p1 = makePeriod();
     const rows = [
       makeRow(p1.id, { amount: "1000", expense: "200", status: "unpaid", visitDate: "2026-01-07", visitDays: 1 }),
@@ -91,9 +91,9 @@ describe("computeGroupFinancials — monthly salary and Income", () => {
     ];
     const t = computeGroupFinancials(group, [p1], rows);
     expect(t.unpaid).toBe(1000);
-    expect(t.expense).toBe(250);
-    expect(t.salary).toBe(100);
-    expect(t.income).toBe(1000 - 250 - 100);
+    expect(t.expense).toBe(250); // total expense is still shown as before
+    expect(t.salary).toBeCloseTo(100); // 1 unpaid day
+    expect(t.income).toBeCloseTo(1000 - 200 - 100);
   });
 
   it("with no salary, income = unpaid − total expense", () => {
@@ -164,23 +164,25 @@ describe("computeMonthlyTotals — salary months", () => {
   const group = makeGroup({ defaultSalary: 500 });
   const period = makePeriod();
 
-  it("sums the clients assigned to that salary month, minus the monthly salary", () => {
+  it("sums the clients assigned to that salary month; Income uses only the unpaid ones", () => {
+    const g = makeGroup({ defaultSalary: 3100 });
     const rows = [
       makeRow(period.id, { amount: "1000", expense: "100", status: "unpaid", visitDate: "2026-01-07", visitDays: 1 }),
       makeRow(period.id, { amount: "400", expense: "50", status: "done", visitDate: "2026-02-01", visitDays: 1 }),
       makeRow(period.id, { amount: "200", status: "unpaid", visitDate: "2026-02-07", visitDays: 1 }),
     ];
     // anchor day 7: Jan7-Feb6 holds rows 1 & 2; Feb7-Mar6 holds row 3.
-    const jan = computeMonthlyTotals("2026-01", [group], [period], rows);
+    const jan = computeMonthlyTotals("2026-01", [g], [period], rows);
     expect(jan.amount).toBe(1400);
     expect(jan.expense).toBe(150);
     expect(jan.myEur).toBe(1250);
     expect(jan.unpaid).toBe(1000);
-    expect(jan.salary).toBe(500);
-    expect(jan.income).toBe(1000 - 150 - 500);
-    const feb = computeMonthlyTotals("2026-02", [group], [period], rows);
+    expect(jan.salary).toBeCloseTo(100); // 3100/31 × 1 unpaid day
+    expect(jan.income).toBeCloseTo(1000 - 100 - 100);
+    const feb = computeMonthlyTotals("2026-02", [g], [period], rows);
     expect(feb.amount).toBe(200);
-    expect(feb.income).toBe(200 - 500);
+    expect(feb.salary).toBeCloseTo(3100 / 28); // Feb 7 → Mar 7 = 28 days
+    expect(feb.income).toBeCloseTo(200 - 3100 / 28);
   });
 
   it("returns all zeros when monthKey is null", () => {

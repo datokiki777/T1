@@ -19,6 +19,13 @@ import { parseDateOnly } from "./dates";
  *   2. otherwise by its period's own date (start date, else end date);
  *   3. otherwise it can't be placed ("undated").
  *
+ * Income of a salary month =
+ *   Unpaid − (Expense of the unpaid clients) − (salary share), where the
+ *   salary share = monthly salary / length of that salary month × the number
+ *   of days covered by the unpaid clients (a day shared by several unpaid
+ *   clients counts once; an unpaid client with no own visit date counts its
+ *   own visitDays, default 1).
+ *
  * A salary month's key is the calendar month it STARTS in ("2026-10" =
  * 7 Oct → 6 Nov).
  */
@@ -29,6 +36,11 @@ export interface SalaryMonthStats {
   expense: number;
   myEur: number;
   unpaid: number;
+  /** Expense of the unpaid clients only. */
+  unpaidExpense: number;
+  /** Days covered by the unpaid clients. */
+  unpaidDays: number;
+  /** Salary share owed for those days. */
   salary: number;
   income: number;
   clients: number;
@@ -79,6 +91,23 @@ export function salaryMonthIndex(d: Date, anchorDay: number): number {
   const y = d.getFullYear();
   const m = d.getMonth();
   return d.getDate() >= effectiveAnchor(y, m, anchorDay) ? y * 12 + m : y * 12 + m - 1;
+}
+
+function salaryMonthStart(idx: number, anchorDay: number): Date {
+  const y = Math.floor(idx / 12);
+  const m = idx - y * 12;
+  return new Date(y, m, effectiveAnchor(y, m, anchorDay));
+}
+
+/** Number of calendar days in the salary month with this index. */
+export function salaryMonthLength(idx: number, anchorDay: number): number {
+  const a = salaryMonthStart(idx, anchorDay);
+  const b = salaryMonthStart(idx + 1, anchorDay);
+  return Math.round(
+    (Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) -
+      Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) /
+      86400000
+  );
 }
 
 export function keyFromMonthIndex(idx: number): string {
@@ -188,11 +217,16 @@ export function computeGroupSalaryMonths(
       expense: 0,
       myEur: 0,
       unpaid: 0,
-      salary,
+      unpaidExpense: 0,
+      unpaidDays: 0,
+      salary: 0,
       income: 0,
       clients: 0,
     });
   }
+  const dayNumbers = new Map<number, Set<number>>(); // idx -> distinct unpaid days
+  const extraDays = new Map<number, number>(); // idx -> days of unpaid clients with no own date
+  const dayNo = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
 
   for (const { row, idx } of placed) {
     const stats = byIdx.get(idx)!;
@@ -200,13 +234,35 @@ export function computeGroupSalaryMonths(
     stats.amount += amount;
     stats.expense += expense;
     stats.myEur += amount - expense;
-    if (row.status === "unpaid") stats.unpaid += amount;
+    if (row.status === "unpaid") {
+      stats.unpaid += amount;
+      stats.unpaidExpense += expense;
+      const own = parseDateOnly(row.visitDate);
+      const days = rowSpanDays(row);
+      if (own) {
+        const set = dayNumbers.get(idx) ?? new Set<number>();
+        for (let i = 0; i < days; i++) set.add(dayNo(own) + i);
+        dayNumbers.set(idx, set);
+      } else {
+        extraDays.set(idx, (extraDays.get(idx) ?? 0) + days);
+      }
+    }
     stats.clients += 1;
   }
 
   const months = [...byIdx.entries()]
     .sort((a, b) => a[0] - b[0])
-    .map(([, s]) => ({ ...s, income: s.unpaid - s.expense - s.salary }));
+    .map(([idx, st]) => {
+      const unpaidDays = (dayNumbers.get(idx)?.size ?? 0) + (extraDays.get(idx) ?? 0);
+      const length = salaryMonthLength(idx, anchorDay);
+      const share = length > 0 ? Math.min(salary, (salary / length) * unpaidDays) : 0;
+      return {
+        ...st,
+        unpaidDays,
+        salary: share,
+        income: st.unpaid - st.unpaidExpense - share,
+      };
+    });
 
   return { anchorDay, months, undatedRows };
 }

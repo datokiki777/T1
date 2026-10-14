@@ -52,6 +52,8 @@ export interface UiSlice {
   mode: ViewMode;
   workspace: WorkspaceTab;
   highlightedRowId: string | null;
+  /** Period whose From/To fields should flash yellow for a few seconds. */
+  highlightedPeriodId: string | null;
   /** Set by Review/Search when it navigates to a row, so the target
    * period force-opens even though periods now start collapsed. */
   expandPeriodId: string | null;
@@ -69,6 +71,7 @@ export interface UiSlice {
   setWorkspace: (ws: WorkspaceTab) => void;
   setTotalsScope: (scope: TotalsScope) => void;
   highlightRow: (id: string) => void;
+  highlightPeriodDates: (id: string) => void;
   requestExpandPeriod: (id: string) => void;
   clearExpandPeriodRequest: () => void;
   toggleAmountsHidden: () => void;
@@ -86,6 +89,7 @@ export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set, get)
   mode: getInitialMode(),
   workspace: "active",
   highlightedRowId: null,
+  highlightedPeriodId: null,
   expandPeriodId: null,
   totalsScope: "current",
   amountsHidden: true,
@@ -134,6 +138,13 @@ export const createUiSlice: StateCreator<AppState, [], [], UiSlice> = (set, get)
     setTimeout(() => {
       // Only clear if nothing else re-triggered a highlight in the meantime.
       if (get().highlightedRowId === id) set({ highlightedRowId: null });
+    }, 3500);
+  },
+
+  highlightPeriodDates: (id) => {
+    set({ highlightedPeriodId: id });
+    setTimeout(() => {
+      if (get().highlightedPeriodId === id) set({ highlightedPeriodId: null });
     }, 3500);
   },
 

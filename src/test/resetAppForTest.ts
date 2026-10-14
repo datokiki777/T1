@@ -87,6 +87,7 @@ export async function resetAppForTest(): Promise<void> {
     workspace: "active",
     totalsScope: "current",
     highlightedRowId: null,
+    highlightedPeriodId: null,
     expandPeriodId: null,
     dataUpdatedAt: null,
     cloudStatus: "idle",

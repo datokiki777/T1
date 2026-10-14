@@ -121,13 +121,14 @@ describe("buildExcelSummary", () => {
   });
 
   it("computes salary/income the same way as computeGroupFinancials", () => {
-    const group = makeGroup({ defaultSalary: 400 }); // monthly
+    const group = makeGroup({ defaultSalary: 3100 }); // monthly
     const period = makePeriod({ fromDate: "2026-01-01", toDate: "2026-01-07", paidWeeks: 0 });
     const rows = [makeRow({ amount: "1000", expense: "100", status: "unpaid" })];
     const summary = buildExcelSummary([group], [period], rows);
+    // no visit date -> period start (Jan 1) anchors the month: Jan 1 → Feb 1 = 31 days
     expect(summary[0].SalaryMonths).toBe(1);
-    expect(summary[0].SalaryTotal).toBe(400);
-    expect(summary[0].Income).toBe(1000 - 100 - 400);
+    expect(summary[0].SalaryTotal).toBeCloseTo(100); // 3100/31 × 1 day
+    expect(summary[0].Income).toBeCloseTo(1000 - 100 - 100);
   });
 
   it("returns one summary row per group even with zero periods", () => {

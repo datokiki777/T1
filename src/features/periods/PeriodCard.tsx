@@ -18,6 +18,7 @@ export function PeriodCard({ periodId }: { periodId: string }) {
   const addClientRow = useAppStore((s) => s.addClientRow);
   const confirmDestructive = useAppStore((s) => s.settings.confirmDestructiveActions);
   const expandPeriodId = useAppStore((s) => s.expandPeriodId);
+  const highlightedPeriodId = useAppStore((s) => s.highlightedPeriodId);
   const clearExpandPeriodRequest = useAppStore((s) => s.clearExpandPeriodRequest);
 
   // Periods start collapsed by default (matching the old app), but if
@@ -147,7 +148,14 @@ export function PeriodCard({ periodId }: { periodId: string }) {
               </div>
             </div>
 
-            <div className={styles.dateFields}>
+            <div
+              className={
+                highlightedPeriodId === period.id
+                  ? `${styles.dateFields} ${styles.dateFieldsHighlight}`
+                  : styles.dateFields
+              }
+              data-period-dates={period.id}
+            >
               <label className={styles.field}>
                 <span>From</span>
                 <input

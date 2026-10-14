@@ -116,10 +116,11 @@ describe("Overview page — matches the old app's business logic", () => {
       expect(unpaidPill).toHaveTextContent("1000");
     });
 
-    // one salary month -> salary 400 -> income = 1000 - 0 - 400 = 600
+    // no visit date -> period start (Jan 1) -> month Jan 1 -> Feb 1 = 31 days;
+    // salary share = 400/31 × 1 day ≈ 12.9 -> income ≈ 987
     await waitFor(() => {
       const incomePill = within(overviewCard).getByText("Income").parentElement!;
-      expect(incomePill).toHaveTextContent("600");
+      expect(incomePill).toHaveTextContent("987");
     });
   });
 

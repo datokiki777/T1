@@ -2,6 +2,7 @@ import { Fragment, useState } from "react";
 import { useAppStore } from "../../app/store";
 import type { DoneStatus } from "../../shared/types/domain";
 import { confirmDialog } from "../../shared/modal/modalStore";
+import { daysBetweenInclusive, formatDateForRange, parseDateOnly } from "../../shared/lib/dates";
 import styles from "./ClientRowItem.module.css";
 
 const STATUS_LABEL: Record<DoneStatus, string> = {
@@ -33,6 +34,7 @@ export function ClientRowItem({
   const confirmDestructive = useAppStore((s) => s.settings.confirmDestructiveActions);
   const [commentOpen, setCommentOpen] = useState(false);
   const [visitPanelOpen, setVisitPanelOpen] = useState(false);
+  const highlightPeriodDates = useAppStore((s) => s.highlightPeriodDates);
 
   if (!row) return null;
 
@@ -45,6 +47,47 @@ export function ClientRowItem({
       return;
     }
     removeRow(row.id);
+  }
+
+  // Saves the visit date/days, then — if the client's days run outside its
+  // period — warns and offers to jump to the period's dates to correct them.
+  async function updateVisit(patch: { visitDate?: string | null; visitDays?: number | null }) {
+    if (!row) return;
+    updateRow(row.id, patch);
+
+    const period = useAppStore.getState().periods.find((p) => p.id === row.periodId);
+    const from = parseDateOnly(period?.fromDate);
+    const to = parseDateOnly(period?.toDate);
+    if (!period || !from || !to || to < from) return;
+
+    const date = parseDateOnly(patch.visitDate !== undefined ? patch.visitDate : row.visitDate);
+    const days = patch.visitDays !== undefined ? patch.visitDays : row.visitDays;
+    const periodText = `${formatDateForRange(from)} → ${formatDateForRange(to)}`;
+
+    let problem: string | null = null;
+    if (date) {
+      const end = new Date(date.getFullYear(), date.getMonth(), date.getDate() + Math.max(1, days ?? 1) - 1);
+      if (date < from || end > to) {
+        problem = `This client's days (${formatDateForRange(date)} → ${formatDateForRange(end)}) go outside the period (${periodText}).`;
+      }
+    } else if (days && days > daysBetweenInclusive(from, to)) {
+      problem = `This client has ${days} days, but the period (${periodText}) is only ${daysBetweenInclusive(from, to)} days long.`;
+    }
+    if (!problem) return;
+
+    const goEdit = await confirmDialog(`${problem}\n\nCorrect the period dates?`, {
+      confirmLabel: "Edit period",
+      cancelLabel: "Keep as is",
+    });
+    if (!goEdit) return;
+
+    setVisitPanelOpen(false);
+    setTimeout(() => {
+      document
+        .querySelector(`[data-period-dates="${period.id}"]`)
+        ?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+      highlightPeriodDates(period.id);
+    }, 80);
   }
 
   return (
@@ -194,7 +237,7 @@ export function ClientRowItem({
               <input
                 type="date"
                 value={row.visitDate ?? ""}
-                onChange={(e) => updateRow(row.id, { visitDate: e.target.value || null })}
+                onChange={(e) => updateVisit({ visitDate: e.target.value || null })}
               />
             </label>
             <div className={styles.visitPanelField}>
@@ -205,7 +248,7 @@ export function ClientRowItem({
                     key={n}
                     type="button"
                     className={row.visitDays === n ? styles.visitDayBtnActive : styles.visitDayBtn}
-                    onClick={() => updateRow(row.id, { visitDays: row.visitDays === n ? null : n })}
+                    onClick={() => updateVisit({ visitDays: row.visitDays === n ? null : n })}
                   >
                     {n}
                   </button>

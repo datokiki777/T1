@@ -4,6 +4,7 @@ import {
   computeGroupSalaryMonths,
   keyFromMonthIndex,
   salaryMonthIndex,
+  salaryMonthLength,
 } from "./salaryMonths";
 import type { ClientRow, Group, Period } from "../types/domain";
 
@@ -158,5 +159,48 @@ describe("computeGroupSalaryMonths", () => {
     const r = computeGroupSalaryMonths(group, [period], [row({})]);
     expect(r.undatedRows).toBe(1);
     expect(r.months).toEqual([]);
+  });
+
+  it("a day shared by several unpaid clients counts once in the salary share", () => {
+    const g = { ...group, defaultSalary: 3100 };
+    const r = computeGroupSalaryMonths(
+      g,
+      [period],
+      [
+        row({ visitDate: "2026-01-07", visitDays: 1, status: "unpaid" }),
+        row({ visitDate: "2026-01-07", visitDays: 1, status: "unpaid" }),
+        row({ visitDate: "2026-01-08", visitDays: 2, status: "unpaid" }),
+      ]
+    );
+    // days: 7, 8, 9 -> 3 distinct days × (3100/31 = 100)
+    expect(r.months[0].unpaidDays).toBe(3);
+    expect(r.months[0].salary).toBeCloseTo(300);
+  });
+
+  it("only unpaid clients' expenses and days count towards Income", () => {
+    const g = { ...group, defaultSalary: 3100 };
+    const r = computeGroupSalaryMonths(
+      g,
+      [period],
+      [
+        row({ visitDate: "2026-01-07", amount: "1000", expense: "100", status: "unpaid" }),
+        row({ visitDate: "2026-01-08", amount: "500", expense: "300", status: "done" }),
+      ]
+    );
+    const m = r.months[0];
+    expect(m.unpaidExpense).toBe(100);
+    expect(m.income).toBeCloseTo(1000 - 100 - 100);
+  });
+
+  it("an unpaid client with no own date counts its own days (default 1)", () => {
+    const g = { ...group, defaultSalary: 3100 };
+    const p = { ...period, fromDate: "2026-01-07" };
+    const r = computeGroupSalaryMonths(g, [p], [row({ status: "unpaid", amount: "500" })]);
+    expect(r.months[0].unpaidDays).toBe(1);
+  });
+
+  it("salaryMonthLength follows the real calendar (Feb with anchor 7 = 28 days)", () => {
+    expect(salaryMonthLength(2026 * 12 + 1, 7)).toBe(28);
+    expect(salaryMonthLength(2026 * 12 + 0, 7)).toBe(31);
   });
 });
