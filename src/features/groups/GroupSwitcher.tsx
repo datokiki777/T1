@@ -161,16 +161,6 @@ export function GroupSwitcher() {
 
           <div className={styles.settingsRow}>
             <label className={styles.settingsField}>
-              <span>Default %</span>
-              <NumericTextField
-                allowDecimal
-                disabled={!activeGroup || isReviewMode}
-                syncKey={activeGroup?.id ?? "none"}
-                value={activeGroup?.defaultRate ?? 0}
-                onChange={(n) => activeGroup && !isReviewMode && updateGroupSettings(activeGroup.id, { defaultRate: n })}
-              />
-            </label>
-            <label className={styles.settingsField}>
               <span>Default salary / 28d</span>
               <NumericTextField
                 disabled={!activeGroup || isReviewMode}

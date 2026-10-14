@@ -20,15 +20,11 @@ describe("Settings — defaults, currency display, destructive-action confirmati
     vi.restoreAllMocks();
   });
 
-  it("uses the configured default rate/salary for newly created groups", async () => {
+  it("uses the configured default salary for newly created groups", async () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText("Select group");
     await openSettings(user);
-
-    const rateInput = screen.getByLabelText("Default rate %");
-    await user.clear(rateInput);
-    await user.type(rateInput, "22.5");
 
     const salaryInput = screen.getByLabelText("Default salary / 28 days");
     await user.clear(salaryInput);
@@ -36,7 +32,6 @@ describe("Settings — defaults, currency display, destructive-action confirmati
 
     await waitFor(async () => {
       const stored = await db.settings.get("app");
-      expect(stored?.defaultRate).toBe(22.5);
       expect(stored?.defaultSalary).toBe(500);
     });
 
@@ -49,7 +44,6 @@ describe("Settings — defaults, currency display, destructive-action confirmati
     await waitFor(async () => {
       const groups = await db.groups.toArray();
       expect(groups).toHaveLength(1);
-      expect(groups[0].defaultRate).toBe(22.5);
       expect(groups[0].defaultSalary).toBe(500);
     });
   });

@@ -20,7 +20,6 @@ describe("store — applyCloudSnapshot", () => {
           id: "g-active",
           name: "Active Group",
           archived: false,
-          defaultRate: 15,
           defaultSalary: 0,
           currentCarNumber: null,
           createdAt: 1,
@@ -30,7 +29,6 @@ describe("store — applyCloudSnapshot", () => {
           id: "g-archived",
           name: "Archived Group",
           archived: true,
-          defaultRate: 25,
           defaultSalary: 500,
           currentCarNumber: null,
           createdAt: 1,
@@ -67,7 +65,6 @@ describe("store — applyCloudSnapshot", () => {
       ],
       {
         id: "app",
-        defaultRate: 13.5,
         defaultSalary: 0,
         currencySymbol: "$",
         confirmDestructiveActions: false,

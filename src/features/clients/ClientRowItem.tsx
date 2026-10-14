@@ -10,6 +10,7 @@ const STATUS_LABEL: Record<DoneStatus, string> = {
   fail: "✕ Fail",
   fixed: "⟳ Fixed",
   wrong: "! Wrong",
+  unpaid: "● Unpaid",
 };
 
 export function ClientRowItem({

@@ -42,13 +42,11 @@ describe("migrateLegacyAppState — 100% data fidelity from the real old-app sha
     const groupA = result.groups.find((g) => g.id === "grp-1")!;
     expect(groupA.name).toBe("Client Group A");
     expect(groupA.archived).toBe(false);
-    expect(groupA.defaultRate).toBe(13.5);
     expect(groupA.defaultSalary).toBe(400);
 
     const groupB = result.groups.find((g) => g.id === "grp-2")!;
     expect(groupB.name).toBe("Archived Group B");
     expect(groupB.archived).toBe(true);
-    expect(groupB.defaultRate).toBe(20);
     // Legacy alias field "defaultSalaryAmount" must still be picked up.
     expect(groupB.defaultSalary).toBe(150);
   });
@@ -115,7 +113,6 @@ describe("migrateLegacyAppState — 100% data fidelity from the real old-app sha
     const result2 = migrateLegacyAppState(sparse);
     expect(result2.groups).toHaveLength(1);
     expect(result2.groups[0].name).toBe("Group");
-    expect(result2.groups[0].defaultRate).toBe(13.5);
     expect(result2.groups[0].defaultSalary).toBe(0);
     expect(result2.periods).toHaveLength(0);
   });
@@ -265,7 +262,6 @@ describe("parseAnyBackupFormat — single entry point, auto-detects & migrates",
           id: "g1",
           name: "G",
           archived: false,
-          defaultRate: 10,
           defaultSalary: 0,
           currentCarNumber: null,
           createdAt: 0,

@@ -19,6 +19,7 @@ const STATUS_LABEL: Record<string, string> = {
   fail: "Fail",
   fixed: "Fixed",
   wrong: "Wrong",
+  unpaid: "Unpaid",
 };
 
 export async function exportToPdf() {
@@ -71,7 +72,7 @@ export async function exportToPdf() {
       ["Income", formatMoney(grand.income)],
       [
         "Status",
-        `Done ${overallStatus.done} · Fail ${overallStatus.fail} · Fixed ${overallStatus.fixed} · Wrong ${overallStatus.wrong}`,
+        `Done ${overallStatus.done} · Fail ${overallStatus.fail} · Fixed ${overallStatus.fixed} · Wrong ${overallStatus.wrong} · Unpaid ${overallStatus.unpaid}`,
       ],
     ],
     margin: { left: margin, right: margin },
@@ -94,7 +95,7 @@ export async function exportToPdf() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.text(
-      `Default %: ${formatMoney(group.defaultRate)}%   Periods: ${groupPeriods.length}   Rows: ${groupRows.length}`,
+      `Periods: ${groupPeriods.length}   Rows: ${groupRows.length}`,
       margin,
       y
     );
@@ -109,7 +110,7 @@ export async function exportToPdf() {
           `Amount: ${formatMoney(financials.amount)}`,
           `Expense: ${formatMoney(financials.expense)}`,
           `My €: ${formatMoney(financials.myEur)}`,
-          `Done ${statusCounts.done} · Fail ${statusCounts.fail} · Fixed ${statusCounts.fixed} · Wrong ${statusCounts.wrong}`,
+          `Done ${statusCounts.done} · Fail ${statusCounts.fail} · Fixed ${statusCounts.fixed} · Wrong ${statusCounts.wrong} · Unpaid ${statusCounts.unpaid}`,
         ],
       ],
       margin: { left: margin, right: margin },
@@ -123,7 +124,7 @@ export async function exportToPdf() {
       }
 
       const periodRows = getRowsForPeriod(clientRows, period.id);
-      const totals = computePeriodTotals(period, clientRows, group.defaultRate);
+      const totals = computePeriodTotals(period, clientRows);
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);

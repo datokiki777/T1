@@ -98,7 +98,6 @@ export async function resetAppForTest(): Promise<void> {
     lastBackupAt: null,
     settings: {
       id: "app",
-      defaultRate: 13.5,
       defaultSalary: 0,
       currencySymbol: "€",
       confirmDestructiveActions: true,

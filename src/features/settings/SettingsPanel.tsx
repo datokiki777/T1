@@ -49,15 +49,6 @@ export function SettingsPanel() {
         <h2 className={styles.cardTitle}>New group defaults</h2>
         <div className={styles.fieldRow}>
           <label className={styles.field}>
-            <span>Default rate %</span>
-            <NumericTextField
-              allowDecimal
-              syncKey="app-settings"
-              value={settings.defaultRate}
-              onChange={(n) => updateSettings({ defaultRate: n })}
-            />
-          </label>
-          <label className={styles.field}>
             <span>Default salary / 28 days</span>
             <NumericTextField
               syncKey="app-settings"

@@ -60,9 +60,6 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
     const periodsAfter = await db.periods.toArray();
     expect(periodsAfter).toHaveLength(1);
 
-    const groupsAfter = await db.groups.toArray();
-    expect(groupsAfter[0].defaultRate).toBe(13.5); // rate now lives on the group
-
     // Expected My€ = amount (1000) − expense (empty = 0) = 1000.
     await screen.findByTestId("period-total-my-eur");
     expect(screen.getByTestId("period-total-my-eur")).toHaveTextContent("1000");
@@ -209,8 +206,8 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
     const headers = within(table).getAllByRole("columnheader");
     expect(headers.map((h) => h.textContent)).toEqual([
       "Customer",
-      "თანხა",
-      "ხარჯი",
+      "Amount",
+      "Expense",
       "City",
       "Done",
       "Actions",

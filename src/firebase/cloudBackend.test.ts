@@ -5,7 +5,6 @@ import type { AppSettings } from "../shared/types/domain";
 
 const settings: AppSettings = {
   id: "app",
-  defaultRate: 13.5,
   defaultSalary: 0,
   currencySymbol: "€",
   confirmDestructiveActions: true,
@@ -20,7 +19,7 @@ describe("CloudBackend history (restore-source picker support)", () => {
   it("writeHistorySnapshot records an entry that can be read back", async () => {
     const backend = createInMemoryCloudBackend(null);
     const snapshot = buildCloudSnapshot(
-      [{ id: "g1", name: "G", archived: false, defaultRate: 10, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
+      [{ id: "g1", name: "G", archived: false, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
       [],
       [],
       settings,
@@ -39,7 +38,7 @@ describe("CloudBackend history (restore-source picker support)", () => {
     const backend = createInMemoryCloudBackend(null);
     const first = buildCloudSnapshot([], [], [], settings, "2026-08-01T09:00:00.000Z");
     const second = buildCloudSnapshot(
-      [{ id: "g1", name: "G", archived: false, defaultRate: 10, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
+      [{ id: "g1", name: "G", archived: false, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
       [],
       [],
       settings,

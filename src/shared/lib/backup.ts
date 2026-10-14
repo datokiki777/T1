@@ -31,7 +31,7 @@ export type ValidationResult =
   | { ok: true; data: BackupPayload }
   | { ok: false; error: string };
 
-const DONE_STATUSES: DoneStatus[] = ["none", "done", "fail", "fixed", "wrong"];
+const DONE_STATUSES: DoneStatus[] = ["none", "done", "fail", "fixed", "wrong", "unpaid"];
 
 function isString(v: unknown): v is string {
   return typeof v === "string";
@@ -49,7 +49,6 @@ function validateGroup(raw: unknown, index: number): string | null {
   if (!isString(g.id)) return `groups[${index}].id must be a string`;
   if (!isString(g.name)) return `groups[${index}].name must be a string`;
   if (!isBoolean(g.archived)) return `groups[${index}].archived must be a boolean`;
-  if (!isNumber(g.defaultRate)) return `groups[${index}].defaultRate must be a number`;
   if (!isNumber(g.defaultSalary)) return `groups[${index}].defaultSalary must be a number`;
   return null;
 }

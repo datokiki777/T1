@@ -25,6 +25,7 @@ const STATUS_LABEL: Record<string, string> = {
   fail: "Fail",
   fixed: "Fixed",
   wrong: "Wrong",
+  unpaid: "Unpaid",
 };
 
 export function ReviewList() {
@@ -108,7 +109,7 @@ function ReviewGroupCard({
             {group.archived && " 📦"}
           </h3>
           <div className={styles.groupMeta}>
-            {periods.length} periods • {groupRows.length} rows • Default {formatMoney(group.defaultRate)}%
+            {periods.length} periods • {groupRows.length} rows
           </div>
         </div>
         <div className={styles.groupBadges}>
@@ -116,17 +117,18 @@ function ReviewGroupCard({
           {statusCounts.fail > 0 && <span className={styles.badgeFail}>{statusCounts.fail}</span>}
           {statusCounts.fixed > 0 && <span className={styles.badgeFixed}>{statusCounts.fixed}</span>}
           {statusCounts.wrong > 0 && <span className={styles.badgeWrong}>{statusCounts.wrong}</span>}
+          {statusCounts.unpaid > 0 && <span className={styles.badgeUnpaidStatus}>{statusCounts.unpaid}</span>}
         </div>
       </div>
 
       <div className={styles.groupBody}>
         <div className={styles.groupKpis}>
           <div className={`${styles.kpi} ${styles.kpiGross}`}>
-            <div className={styles.kpiLabel}>თანხა</div>
+            <div className={styles.kpiLabel}>Amount</div>
               <div className={styles.kpiValue}><span className="js-money">{formatMoney(financials.amount)}</span></div>
             </div>
             <div className={`${styles.kpi} ${styles.kpiNet}`}>
-              <div className={styles.kpiLabel}>ხარჯი</div>
+              <div className={styles.kpiLabel}>Expense</div>
               <div className={styles.kpiValue}><span className="js-money">{formatMoney(financials.expense)}</span></div>
             </div>
             <div className={`${styles.kpi} ${styles.kpiMy}`}>
@@ -141,7 +143,6 @@ function ReviewGroupCard({
             <ReviewPeriodCard
               key={period.id}
               period={period}
-              rate={group.defaultRate}
               rows={getRowsForPeriod(clientRows, period.id)}
               group={group}
             />
@@ -153,16 +154,14 @@ function ReviewGroupCard({
 
 function ReviewPeriodCard({
   period,
-  rate,
   rows,
   group,
 }: {
   period: Period;
-  rate: number;
   rows: ClientRow[];
   group: Group;
 }) {
-  const totals = useMemo(() => computePeriodTotals(period, rows, rate), [period, rows, rate]);
+  const totals = useMemo(() => computePeriodTotals(period, rows), [period, rows]);
   const openClientInEdit = useOpenClientInEdit();
   const pressTimer = useRef<number | null>(null);
   const [visitModalRowId, setVisitModalRowId] = useState<string | null>(null);
@@ -202,10 +201,10 @@ function ReviewPeriodCard({
         </div>
         <div className={styles.periodSums}>
           <span className={styles.badge}>
-            თანხა: <b className="js-money">{formatMoney(totals.amount)}</b>
+            Amount: <b className="js-money">{formatMoney(totals.amount)}</b>
           </span>
           <span className={styles.badge}>
-            ხარჯი: <b className="js-money">{formatMoney(totals.expense)}</b>
+            Expense: <b className="js-money">{formatMoney(totals.expense)}</b>
           </span>
           <span className={styles.badge}>
             My €: <b className="js-money">{formatMoney(totals.myEur)}</b>
@@ -277,8 +276,8 @@ function ReviewPeriodCard({
               )}
             </div>
             <div className={styles.clientValues}>
-              <span>თანხა: <b className="js-money">{formatMoney(parseMoney(row.amount) || 0)}</b></span>
-              <span>ხარჯი: <b className="js-money">{formatMoney(parseMoney(row.expense) || 0)}</b></span>
+              <span>Amount: <b className="js-money">{formatMoney(parseMoney(row.amount) || 0)}</b></span>
+              <span>Expense: <b className="js-money">{formatMoney(parseMoney(row.expense) || 0)}</b></span>
             </div>
           </div>
         ))}

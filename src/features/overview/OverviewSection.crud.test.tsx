@@ -14,7 +14,7 @@ describe("Overview page — matches the old app's business logic", () => {
     vi.restoreAllMocks();
   });
 
-  it("KPI cards (თანხა/ხარჯი/My€/Unpaid/Income) update automatically as data changes", async () => {
+  it("KPI cards (Amount/Expense/My€/Unpaid/Income) update automatically as data changes", async () => {
     const user = userEvent.setup();
     mockModalPrompt("Overview Group");
 
@@ -38,30 +38,40 @@ describe("Overview page — matches the old app's business logic", () => {
     const grossInput = within(table).getAllByPlaceholderText("0")[0];
     await user.type(grossInput, "1000");
 
-    // Default group rate is 13.5%; Expense not entered -> the row is "Unpaid"
-    // (legacy rate-based logic, unchanged).
     await waitFor(() => {
-      const grossKpi = within(overviewCard).getByText("თანხა").parentElement!;
-      expect(grossKpi).toHaveTextContent("1000");
-    });
-
-    await waitFor(() => {
-      const unpaidPill = within(overviewCard).getByText("Unpaid").parentElement!;
-      expect(unpaidPill).toHaveTextContent("135"); // 1000 * 13.5%
-    });
-
-    // No salary configured for this group (default 0) -> income == unpaid.
-    await waitFor(() => {
-      const incomePill = within(overviewCard).getByText("Income").parentElement!;
-      expect(incomePill).toHaveTextContent("135");
+      const amountKpi = within(overviewCard).getByText("Amount").parentElement!;
+      expect(amountKpi).toHaveTextContent("1000");
     });
 
     // Status badges update automatically when a row's status changes.
-    const statusBtn = within(table).getByRole("button", { name: "—" });
-    await user.click(statusBtn); // -> done
+    await user.click(within(table).getByRole("button", { name: "—" })); // -> done
     await waitFor(() => {
       const statusRow = within(overviewCard).getByText(/Done \/ Fail/).parentElement!;
       expect(within(statusRow).getAllByText("1")[0]).toBeInTheDocument();
+    });
+
+    // Cycle on to "unpaid": done -> fail -> fixed -> wrong -> unpaid.
+    await user.click(within(table).getByRole("button", { name: "✓ Done" }));
+    await user.click(within(table).getByRole("button", { name: "✕ Fail" }));
+    await user.click(within(table).getByRole("button", { name: "⟳ Fixed" }));
+    await user.click(within(table).getByRole("button", { name: "! Wrong" }));
+    expect(await within(table).findByRole("button", { name: "● Unpaid" })).toBeInTheDocument();
+
+    // Unpaid = sum of Amount of unpaid rows; no expense/salary -> income == unpaid.
+    await waitFor(() => {
+      const unpaidPill = within(overviewCard).getByText("Unpaid").parentElement!;
+      expect(unpaidPill).toHaveTextContent("1000");
+    });
+    await waitFor(() => {
+      const incomePill = within(overviewCard).getByText("Income").parentElement!;
+      expect(incomePill).toHaveTextContent("1000");
+    });
+
+    // Typing an Expense lowers Income: 1000 − 300 = 700.
+    await user.type(within(table).getAllByPlaceholderText("0")[1], "300");
+    await waitFor(() => {
+      const incomePill = within(overviewCard).getByText("Income").parentElement!;
+      expect(incomePill).toHaveTextContent("700");
     });
   });
 
@@ -91,7 +101,11 @@ describe("Overview page — matches the old app's business logic", () => {
     await user.click(screen.getByRole("button", { name: "+ Add client" }));
     const table = screen.getByRole("table");
     const grossInput = within(table).getAllByPlaceholderText("0")[0];
-    await user.type(grossInput, "1000"); // unpaid = 1000 * 13.5% = 135
+    await user.type(grossInput, "1000");
+    // done -> fail -> fixed -> wrong -> unpaid
+    for (const name of ["—", "✓ Done", "✕ Fail", "⟳ Fixed", "! Wrong"]) {
+      await user.click(within(table).getByRole("button", { name }));
+    }
 
     const overviewCard = screen.getByText("📊 Overview").closest("section")!;
     // Overview starts collapsed by default now — open it.
@@ -99,13 +113,13 @@ describe("Overview page — matches the old app's business logic", () => {
 
     await waitFor(() => {
       const unpaidPill = within(overviewCard).getByText("Unpaid").parentElement!;
-      expect(unpaidPill).toHaveTextContent("135");
+      expect(unpaidPill).toHaveTextContent("1000");
     });
 
-    // salary owed = 100 (1 week * 100/week, 0 paid weeks) -> income = 135 - 100 = 35
+    // salary owed = 100 (1 week * 100/week, 0 paid weeks) -> income = 1000 - 100 = 900
     await waitFor(() => {
       const incomePill = within(overviewCard).getByText("Income").parentElement!;
-      expect(incomePill).toHaveTextContent("35");
+      expect(incomePill).toHaveTextContent("900");
     });
   });
 

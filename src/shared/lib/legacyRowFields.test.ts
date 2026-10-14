@@ -22,7 +22,7 @@ describe("validateBackupPayload — old backups with gross/net still import", ()
     const now = 1;
     const result = validateBackupPayload({
       groups: [
-        { id: "g1", name: "G", archived: false, defaultRate: 10, defaultSalary: 0, createdAt: now, updatedAt: now },
+        { id: "g1", name: "G", archived: false, defaultSalary: 0, createdAt: now, updatedAt: now },
       ],
       periods: [
         { id: "p1", groupId: "g1", fromDate: null, toDate: null, paidWeeks: null, createdAt: now, updatedAt: now },

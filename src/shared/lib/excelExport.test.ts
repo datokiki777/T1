@@ -7,7 +7,6 @@ function makeGroup(overrides: Partial<Group> = {}): Group {
     id: "g1",
     name: "Group 1",
     archived: false,
-    defaultRate: 10,
     defaultSalary: 0,
     currentCarNumber: null,
     createdAt: 0,
@@ -55,7 +54,6 @@ describe("buildExcelRows", () => {
     expect(rows[0]).toMatchObject({
       Group: "Group 1",
       Archived: "no",
-      DefaultRatePercent: 10,
       DefaultSalaryPer28Days: 0,
       From: "01/01/2026",
       To: "31/01/2026",

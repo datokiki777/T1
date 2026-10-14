@@ -62,7 +62,7 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
     await openSettings(user);
 
     const payload = buildBackupPayload(
-      [{ id: "g1", name: "G", archived: false, defaultRate: 10, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
+      [{ id: "g1", name: "G", archived: false, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
       [],
       [
         {
@@ -97,7 +97,7 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
     await openSettings(user);
 
     const payload = buildBackupPayload(
-      [{ id: "g1", name: "Imported Group", archived: false, defaultRate: 10, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
+      [{ id: "g1", name: "Imported Group", archived: false, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
       [],
       []
     );
@@ -122,7 +122,7 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
     await openSettings(user);
 
     const payload = buildBackupPayload(
-      [{ id: "g1", name: "Imported Group", archived: false, defaultRate: 20, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
+      [{ id: "g1", name: "Imported Group", archived: false, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
       [{ id: "p1", groupId: "g1", fromDate: "2026-01-01", toDate: "2026-01-31", paidWeeks: null, carNumber: null, createdAt: 0, updatedAt: 0 }],
       [
         {
@@ -164,7 +164,7 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
 
   it("preserves decimal values exactly through export/import shape (no rounding)", async () => {
     const payload = buildBackupPayload(
-      [{ id: "g1", name: "G", archived: false, defaultRate: 13.5, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
+      [{ id: "g1", name: "G", archived: false, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
       [{ id: "p1", groupId: "g1", fromDate: null, toDate: null, paidWeeks: null, carNumber: null, createdAt: 0, updatedAt: 0 }],
       [
         {
@@ -187,7 +187,6 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
     const roundTripped = JSON.parse(JSON.stringify(payload));
     expect(roundTripped.clientRows[0].amount).toBe("1234.56");
     expect(roundTripped.clientRows[0].expense).toBe("78.9");
-    expect(roundTripped.groups[0].defaultRate).toBe(13.5);
   });
 
   it("imports a real old vanilla-JS app backup file (wrapped format) without ever saying 'invalid backup'", async () => {
@@ -270,7 +269,7 @@ describe("Import/Export — JSON backup validation, confirmation, and state refr
     await openSettings(user);
 
     const payload = buildBackupPayload(
-      [{ id: "g1", name: "Native Group", archived: false, defaultRate: 10, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
+      [{ id: "g1", name: "Native Group", archived: false, defaultSalary: 0, currentCarNumber: null, createdAt: 0, updatedAt: 0 }],
       [],
       []
     );

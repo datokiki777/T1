@@ -13,7 +13,7 @@ export interface GroupsSlice {
   renameGroup: (id: string, name: string) => void;
   updateGroupSettings: (
     id: string,
-    patch: { defaultRate?: number; defaultSalary?: number; currentCarNumber?: string | null }
+    patch: { defaultSalary?: number; currentCarNumber?: string | null }
   ) => void;
   deleteGroup: (id: string) => void;
   toggleArchiveGroup: (id: string) => void;
@@ -26,12 +26,11 @@ export const createGroupsSlice: StateCreator<AppState, [], [], GroupsSlice> = (s
     groups: [],
 
     addGroup: async (name) => {
-      const { defaultRate, defaultSalary } = get().settings;
+      const { defaultSalary } = get().settings;
       const group: Group = {
         id: generateId(),
         name: name.trim() || "New group",
         archived: false,
-        defaultRate,
         defaultSalary,
         currentCarNumber: null,
         createdAt: now(),

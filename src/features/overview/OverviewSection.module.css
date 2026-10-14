@@ -173,10 +173,12 @@
 .badgeFail,
 .badgeFixed,
 .badgeWrong,
+.badgeUnpaid,
 .badgeDoneActive,
 .badgeFailActive,
 .badgeFixedActive,
-.badgeWrongActive {
+.badgeWrongActive,
+.badgeUnpaidActive {
   min-width: 26px;
   text-align: center;
   border-radius: var(--radius-pill);
@@ -204,11 +206,16 @@
 .badgeWrongActive {
   background: #b892ff;
 }
+.badgeUnpaid,
+.badgeUnpaidActive {
+  background: #b9f3c8;
+}
 
 .badgeDoneActive,
 .badgeFailActive,
 .badgeFixedActive,
-.badgeWrongActive {
+.badgeWrongActive,
+.badgeUnpaidActive {
   border-color: var(--text);
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
 }

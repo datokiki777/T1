@@ -7,7 +7,6 @@ function makeGroup(overrides: Partial<Group> = {}): Group {
     id: "g1",
     name: "Group 1",
     archived: false,
-    defaultRate: 10,
     defaultSalary: 0,
     currentCarNumber: null,
     createdAt: 0,
@@ -83,7 +82,7 @@ describe("validateBackupPayload — rejects invalid input", () => {
 
   it("rejects a group with the wrong field types", () => {
     const result = validateBackupPayload({
-      groups: [{ id: "g1", name: "G", archived: "yes", defaultRate: 10, defaultSalary: 0 }],
+      groups: [{ id: "g1", name: "G", archived: "yes", defaultSalary: 0 }],
       periods: [],
       clientRows: [],
     });

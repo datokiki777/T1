@@ -6,7 +6,6 @@ import type { AppState } from "../types";
 
 export const DEFAULT_SETTINGS: AppSettings = {
   id: "app",
-  defaultRate: 13.5,
   defaultSalary: 0,
   currencySymbol: "€",
   confirmDestructiveActions: true,

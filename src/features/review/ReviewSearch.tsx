@@ -11,6 +11,7 @@ const STATUS_LABEL: Record<string, string> = {
   fail: "Fail",
   fixed: "Fixed",
   wrong: "Wrong",
+  unpaid: "Unpaid",
 };
 
 function Highlighted({ text, query }: { text: string; query: string }) {
@@ -133,10 +134,10 @@ export function ReviewSearch() {
                   )}
                 </span>
                 <span>
-                  <b>თანხა:</b> <span className="js-money">{item.amount}</span>
+                  <b>Amount:</b> <span className="js-money">{item.amount}</span>
                 </span>
                 <span>
-                  <b>ხარჯი:</b> <span className="js-money">{item.expense}</span>
+                  <b>Expense:</b> <span className="js-money">{item.expense}</span>
                 </span>
               </div>
               {item.comment && (

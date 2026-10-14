@@ -7,7 +7,6 @@ import { getPeriodsForGroup, getRowsForPeriod } from "./entityLookup";
 export interface ExcelRow {
   Group: string;
   Archived: "yes" | "no";
-  DefaultRatePercent: number;
   DefaultSalaryPer28Days: number;
   From: string;
   To: string;
@@ -24,7 +23,6 @@ export interface ExcelRow {
 export interface ExcelSummaryRow {
   Group: string;
   Archived: "yes" | "no";
-  DefaultRatePercent: number;
   DefaultSalaryPer28Days: number;
   CurrentCarNumber: string;
   Periods: number;
@@ -41,6 +39,7 @@ export interface ExcelSummaryRow {
   Fail: number;
   Fixed: number;
   Wrong: number;
+  UnpaidClients: number;
 }
 
 /**
@@ -60,7 +59,6 @@ export function buildExcelRows(groups: Group[], periods: Period[], clientRows: C
         out.push({
           Group: group.archived ? `📦 ${group.name}` : group.name,
           Archived: group.archived ? "yes" : "no",
-          DefaultRatePercent: group.defaultRate,
           DefaultSalaryPer28Days: group.defaultSalary,
           From: formatPeriodDate(period.fromDate),
           To: formatPeriodDate(period.toDate),
@@ -95,7 +93,6 @@ export function buildExcelSummary(
     return {
       Group: group.archived ? `📦 ${group.name}` : group.name,
       Archived: group.archived ? "yes" : "no",
-      DefaultRatePercent: group.defaultRate,
       DefaultSalaryPer28Days: group.defaultSalary,
       CurrentCarNumber: group.currentCarNumber ?? "",
       Periods: groupPeriods.length,
@@ -112,6 +109,7 @@ export function buildExcelSummary(
       Fail: statusCounts.fail,
       Fixed: statusCounts.fixed,
       Wrong: statusCounts.wrong,
+      UnpaidClients: statusCounts.unpaid,
     };
   });
 }

@@ -92,7 +92,8 @@
 .badgeDone,
 .badgeFail,
 .badgeFixed,
-.badgeWrong {
+.badgeWrong,
+.badgeUnpaidStatus {
   min-width: 20px;
   text-align: center;
   border-radius: var(--radius-pill);
@@ -105,6 +106,7 @@
 .badgeFail { background: var(--danger); }
 .badgeFixed { background: var(--accent); }
 .badgeWrong { background: #b892ff; }
+.badgeUnpaidStatus { background: #b9f3c8; }
 
 .chevron {
   color: var(--text-muted);

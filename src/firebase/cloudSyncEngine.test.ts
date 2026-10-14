@@ -6,7 +6,6 @@ import type { AppSettings } from "../shared/types/domain";
 
 const settings: AppSettings = {
   id: "app",
-  defaultRate: 13.5,
   defaultSalary: 0,
   currencySymbol: "€",
   confirmDestructiveActions: true,
@@ -17,7 +16,6 @@ function makeSnapshot(dataUpdatedAt: string, groupCount = 1): CloudSnapshot {
     id: `g${i}`,
     name: `Group ${i}`,
     archived: false,
-    defaultRate: 10,
     defaultSalary: 0,
     currentCarNumber: null,
     createdAt: 0,
@@ -156,7 +154,6 @@ describe("Cloud sync — data integrity", () => {
           id: "g-archived",
           name: "Archived Group",
           archived: true,
-          defaultRate: 20,
           defaultSalary: 400,
           currentCarNumber: null,
           createdAt: 1,

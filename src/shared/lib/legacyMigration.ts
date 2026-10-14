@@ -1,6 +1,5 @@
 import type { ClientRow, DoneStatus, Group, Period } from "../types/domain";
 import { generateId, now } from "./id";
-import { clampRate } from "./money";
 import { buildBackupPayload, validateBackupPayload, type ValidationResult } from "./backup";
 
 const VALID_STATUSES: DoneStatus[] = ["none", "done", "fail", "fixed", "wrong"];
@@ -111,7 +110,6 @@ export function migrateLegacyAppState(legacy: LegacyAppState): {
       id: groupId,
       name: (g.name ?? "Group").toString().trim() || "Group",
       archived: g.archived === true,
-      defaultRate: clampRate(groupData.defaultRatePercent ?? 13.5),
       defaultSalary: Math.max(
         0,
         Number(groupData.defaultSalaryPer28Days ?? groupData.defaultSalaryAmount ?? 0) || 0

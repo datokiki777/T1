@@ -6,7 +6,7 @@ import type {
   PeriodTotals,
   StatusCounts,
 } from "../types/domain";
-import { parseMoney, clampRate } from "./money";
+import { parseMoney } from "./money";
 import { getPeriodsForGroup } from "./entityLookup";
 import {
   calcCoveredWeeks,
@@ -25,18 +25,12 @@ import {
  * - The app doesn't support cents: values are rounded to whole numbers the
  *   moment they're parsed.
  * - "My €" per row = Amount − Expense (an empty Expense counts as 0).
- * - "Unpaid" per row = Amount * rate, only when Amount is entered but
- *   Expense isn't. (Legacy rate-based logic, kept for now — it is NOT
- *   derived from My €.)
- *
- * `ratePercent` is the GROUP's rate; it only affects "Unpaid" now.
+ * - "Unpaid" = sum of the Amount of rows whose status is "unpaid".
  */
 export function computePeriodTotals(
   period: Pick<Period, "id">,
-  rows: ClientRow[],
-  ratePercent: number
+  rows: ClientRow[]
 ): PeriodTotals {
-  const rate = clampRate(ratePercent) / 100;
   const periodRows = rows.filter((r) => r.periodId === period.id);
 
   let amount = 0;
@@ -63,8 +57,8 @@ export function computePeriodTotals(
     expense += e;
     myEur += a - e;
 
-    if (!hasExpense && hasAmount) {
-      unpaid += a * rate;
+    if (row.status === "unpaid") {
+      unpaid += a;
     }
   }
 
@@ -95,7 +89,7 @@ export function computeGroupFinancials(
 
   const totals = groupPeriods.reduce(
     (acc, p) => {
-      const t = computePeriodTotals(p, rows, group.defaultRate);
+      const t = computePeriodTotals(p, rows);
       acc.amount += t.amount;
       acc.expense += t.expense;
       acc.myEur += t.myEur;
@@ -111,7 +105,8 @@ export function computeGroupFinancials(
   const salaryAccrued = weeklySalary * grossWeeks;
   const salaryPaid = weeklySalary * Math.min(paidWeeks, grossWeeks);
   const salary = Math.max(0, salaryAccrued - salaryPaid);
-  const income = totals.unpaid - salary;
+  // Income = Unpaid − total Expense − remaining Salary.
+  const income = totals.unpaid - totals.expense - salary;
 
   return {
     ...totals,
@@ -162,12 +157,13 @@ export function computeGrandTotals(
 
 /** Faithful port of calcGroupStatusCounts()/calcStatusCountsByMode(): plain counts, not month-filtered. */
 export function computeStatusCounts(rows: ClientRow[]): StatusCounts {
-  const counts: StatusCounts = { done: 0, fail: 0, fixed: 0, wrong: 0 };
+  const counts: StatusCounts = { done: 0, fail: 0, fixed: 0, wrong: 0, unpaid: 0 };
   for (const row of rows) {
     if (row.status === "done") counts.done++;
     else if (row.status === "fail") counts.fail++;
     else if (row.status === "fixed") counts.fixed++;
     else if (row.status === "wrong") counts.wrong++;
+    else if (row.status === "unpaid") counts.unpaid++;
   }
   return counts;
 }
@@ -175,7 +171,7 @@ export function computeStatusCounts(rows: ClientRow[]): StatusCounts {
 /** Faithful port of getMarkedClientsCount(): any row with a non-"none" status. */
 export function computeMarkedClientsCount(rows: ClientRow[]): number {
   const c = computeStatusCounts(rows);
-  return c.done + c.fail + c.fixed + c.wrong;
+  return c.done + c.fail + c.fixed + c.wrong + c.unpaid;
 }
 
 /**
@@ -193,11 +189,10 @@ export function computeMonthlyTotals(
 
   const monthStart = getMonthStart(monthKey);
   const monthEnd = getMonthEnd(monthKey);
-  const rateByGroupId = new Map(groups.map((g) => [g.id, g.defaultRate]));
+  const groupIds = new Set(groups.map((g) => g.id));
 
   for (const period of periods) {
-    const rate = rateByGroupId.get(period.groupId);
-    if (rate === undefined) continue;
+    if (!groupIds.has(period.groupId)) continue;
 
     const from = parseDateOnly(period.fromDate);
     const to = parseDateOnly(period.toDate);
@@ -208,7 +203,7 @@ export function computeMonthlyTotals(
     if (overlapDays <= 0 || totalDays <= 0) continue;
 
     const ratio = overlapDays / totalDays;
-    const t = computePeriodTotals(period, rows, rate);
+    const t = computePeriodTotals(period, rows);
 
     result.amount += t.amount * ratio;
     result.expense += t.expense * ratio;

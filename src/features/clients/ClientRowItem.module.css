@@ -197,7 +197,8 @@
 .status_done,
 .status_fail,
 .status_fixed,
-.status_wrong {
+.status_wrong,
+.status_unpaid {
   border: none;
   border-radius: var(--radius-pill);
   padding: 5px 12px;
@@ -223,6 +224,9 @@
 }
 .status_wrong {
   background: #b892ff;
+}
+.status_unpaid {
+  background: #b9f3c8;
 }
 
 .wrongRow {

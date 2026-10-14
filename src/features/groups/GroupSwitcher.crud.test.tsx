@@ -71,7 +71,6 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Archive / Restore" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Default %")).toBeInTheDocument();
     expect(screen.getByLabelText("Default salary / 28d")).toBeInTheDocument();
     expect(menu).toBeInTheDocument();
   });
@@ -156,7 +155,7 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     expect(switcherBtn).toHaveTextContent("Active Two");
   });
 
-  it("group management controls (add/rename/archive/delete, default rate/salary) are disabled in Review mode", async () => {
+  it("group management controls (add/rename/archive/delete, default salary) are disabled in Review mode", async () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText("Select group");
@@ -168,7 +167,6 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     expect(screen.getByRole("button", { name: "Rename" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Archive / Restore" })).toBeEnabled();
-    expect(screen.getByLabelText("Default %")).toBeEnabled();
     expect(screen.getByLabelText("Default salary / 28d")).toBeEnabled();
 
     await user.click(screen.getByRole("tab", { name: "Review" }));
@@ -177,7 +175,6 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     expect(screen.getByRole("button", { name: "Rename" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Archive / Restore" })).toBeDisabled();
-    expect(screen.getByLabelText("Default %")).toBeDisabled();
     expect(screen.getByLabelText("Default salary / 28d")).toBeDisabled();
 
     // But tap-to-cycle (browsing groups) must still work in Review mode:
@@ -193,27 +190,21 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     expect(switcherBtn).toHaveTextContent("Manageable In Edit");
   });
 
-  it("clearing Default % or salary mid-edit and typing again never leaves a stray leading zero", async () => {
+  it("clearing the salary mid-edit and typing again never leaves a stray leading zero", async () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText("Select group");
     await addGroupViaMenu(user, "Clear And Retype Group");
 
-    const rateInput = screen.getByLabelText("Default %");
     const salaryInput = screen.getByLabelText("Default salary / 28d");
 
     // Delete everything down to empty, THEN type — not just tap-in-and-type.
-    await user.clear(rateInput);
-    await user.type(rateInput, "13.5");
-    expect(rateInput).toHaveValue("13.5");
-
     await user.clear(salaryInput);
     await user.type(salaryInput, "3500");
     expect(salaryInput).toHaveValue("3500");
 
     // And the underlying numeric values are correct too, not "013"/"03500".
     const group = (await db.groups.toArray())[0];
-    expect(group.defaultRate).toBe(13.5);
     expect(group.defaultSalary).toBe(3500);
   });
 

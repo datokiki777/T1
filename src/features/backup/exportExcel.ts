@@ -18,7 +18,6 @@ export async function exportToExcel() {
   wsRows["!cols"] = [
     { wch: 20 }, // Group
     { wch: 10 }, // Archived
-    { wch: 18 }, // DefaultRatePercent
     { wch: 22 }, // DefaultSalaryPer28Days
     { wch: 12 }, // From
     { wch: 12 }, // To
@@ -35,7 +34,6 @@ export async function exportToExcel() {
   wsSummary["!cols"] = [
     { wch: 20 }, // Group
     { wch: 10 }, // Archived
-    { wch: 18 }, // DefaultRatePercent
     { wch: 22 }, // DefaultSalaryPer28Days
     { wch: 10 }, // Periods
     { wch: 10 }, // Rows
@@ -51,6 +49,7 @@ export async function exportToExcel() {
     { wch: 8 }, // Fail
     { wch: 8 }, // Fixed
     { wch: 8 }, // Wrong
+    { wch: 12 }, // UnpaidClients
   ];
 
   XLSX.utils.book_append_sheet(workbook, wsRows, "Rows");

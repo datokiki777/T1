@@ -7,7 +7,6 @@ function makeGroup(overrides: Partial<Group> = {}): Group {
     id: "g1",
     name: "Group 1",
     archived: false,
-    defaultRate: 10,
     defaultSalary: 0,
     currentCarNumber: null,
     createdAt: 0,

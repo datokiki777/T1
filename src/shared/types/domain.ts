@@ -1,15 +1,12 @@
 // Domain types — core data model, shared across features.
 
-export type DoneStatus = "none" | "done" | "fail" | "fixed" | "wrong";
+export type DoneStatus = "none" | "done" | "fail" | "fixed" | "wrong" | "unpaid";
 
 export interface Group {
   id: string;
   name: string;
   archived: boolean;
-  // Rate/salary live on the GROUP (exactly like the old app's
-  // defaultRatePercent / defaultSalaryPer28Days) — every period in the
-  // group shares them; individual periods do not have their own rate.
-  defaultRate: number; // %
+  // Salary lives on the GROUP — every period in the group shares it.
   defaultSalary: number; // per 28 days
   /** The car currently assigned to this group — digits only, stored as
    * a string (not a number) so leading zeros are never silently
@@ -70,6 +67,7 @@ export interface StatusCounts {
   fail: number;
   fixed: number;
   wrong: number;
+  unpaid: number;
 }
 
 export interface GroupFinancials extends PeriodTotals {
@@ -83,7 +81,6 @@ export interface GroupFinancials extends PeriodTotals {
 
 export interface AppSettings {
   id: "app"; // singleton row
-  defaultRate: number;
   defaultSalary: number;
   /** Display-only currency symbol — never affects stored numeric values. */
   currencySymbol: string;

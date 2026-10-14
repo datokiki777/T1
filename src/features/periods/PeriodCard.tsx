@@ -46,7 +46,7 @@ export function PeriodCard({ periodId }: { periodId: string }) {
 
   if (!period || !group) return null;
 
-  const totals = computePeriodTotals(period, rows, group.defaultRate);
+  const totals = computePeriodTotals(period, rows);
 
   async function handleRemovePeriod() {
     if (
@@ -188,8 +188,8 @@ export function PeriodCard({ periodId }: { periodId: string }) {
               <thead>
                 <tr>
                   <th>Customer</th>
-                  <th>თანხა</th>
-                  <th>ხარჯი</th>
+                  <th>Amount</th>
+                  <th>Expense</th>
                   <th>City</th>
                   <th>Done</th>
                   <th>Actions</th>
