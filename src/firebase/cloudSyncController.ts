@@ -135,6 +135,17 @@ export function startCloudSync(): void {
     useAppStore.getState().setCloudUserEmail(user?.email ?? null);
     if (user) {
       await runSyncNow();
+    } else {
+      // Signed out — drop the cached backend (it was scoped to the
+      // previous uid) and any leftover status/sync info from that
+      // session, so if someone else signs in on this same device next,
+      // they never briefly see the previous person's sync state.
+      backendPromise = null;
+      backendUid = null;
+      useAppStore.getState().setCloudStatus("idle");
+      useAppStore.getState().setCloudConflict(null);
+      useAppStore.getState().setCloudSyncDetail(null);
+      useAppStore.setState({ cloudLastSyncedAt: null });
     }
   }).catch((error) => {
     // Firebase unavailable (offline install, blocked script, etc.) — the

@@ -168,4 +168,22 @@ describe("Cloud Sync settings — signed-in view", () => {
 
     expect(await screen.findByText(/^Synced - \d{1,2}:\d{2}:\d{2}/)).toBeInTheDocument();
   });
+
+  it("shows a 'Sign out' button once signed in, which calls signOutOfCloud", async () => {
+    const user = userEvent.setup();
+    const authModule = await import("./auth");
+    const signOutSpy = vi.spyOn(authModule, "signOutOfCloud").mockResolvedValue(undefined);
+
+    act(() => {
+      useAppStore.setState({ cloudUserEmail: "person@example.com" });
+    });
+    render(<CloudSyncSettings />);
+
+    const signOutBtn = screen.getByRole("button", { name: "Sign out" });
+    expect(signOutBtn).toBeInTheDocument();
+    await user.click(signOutBtn);
+
+    expect(signOutSpy).toHaveBeenCalledTimes(1);
+    signOutSpy.mockRestore();
+  });
 });

@@ -3,7 +3,7 @@ import { useAppStore } from "../app/store";
 import { manualCloudSave, resolveCloudConflict } from "./cloudSyncController";
 import { RestoreSourcePicker } from "./RestoreSourcePicker";
 import { DataBackupPanel } from "../features/backup/DataBackupPanel";
-import { signInWithEmail } from "./auth";
+import { signInWithEmail, signOutOfCloud } from "./auth";
 import { isFirebaseConfigured } from "./config";
 import styles from "../features/settings/SettingsPanel.module.css";
 
@@ -139,6 +139,20 @@ export function CloudSyncSettings() {
     }
   }
 
+  async function handleSignOut() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      await signOutOfCloud();
+      // No success message needed — signing out immediately swaps this
+      // view back to the sign-in form (cloudUserEmail becomes null via
+      // the auth-state listener), which is its own clear confirmation.
+    } catch {
+      setMessage("Sign out failed — check your connection and try again.");
+      setBusy(false);
+    }
+  }
+
   const syncTimeLabel = formatSyncTime(cloudLastSyncedAt);
 
   if (!isFirebaseConfigured) {
@@ -199,7 +213,25 @@ export function CloudSyncSettings() {
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div className={styles.infoGrid}>
         <span>Account</span>
-        <span>{cloudUserEmail}</span>
+        <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          {cloudUserEmail}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={busy}
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-muted)",
+              textDecoration: "underline",
+              cursor: "pointer",
+              fontSize: 13,
+              padding: 0,
+            }}
+          >
+            Sign out
+          </button>
+        </span>
         <span>Status</span>
         <span>{STATUS_LABEL[cloudStatus] ?? cloudStatus}</span>
         {cloudStatus === "error" && cloudError && (
