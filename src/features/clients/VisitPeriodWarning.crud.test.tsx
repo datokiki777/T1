@@ -50,7 +50,7 @@ describe("client days vs. period dates", () => {
     expect(useAppStore.getState().highlightedPeriodId).toBeNull();
   });
 
-  it("warns when the days run past the period; 'Edit period' flashes the period dates", async () => {
+  it("warns when the days run past the period; 'Edit period' flashes the period dates and DOES save the out-of-range value", async () => {
     const user = userEvent.setup();
     await setupClientInPeriod(user);
     fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-01-06" } });
@@ -65,9 +65,11 @@ describe("client days vs. period dates", () => {
     await waitFor(() => expect(useAppStore.getState().highlightedPeriodId).toBe(periodId));
     // The visit panel closes so the period dates are in view.
     await waitFor(() => expect(screen.queryByLabelText("Date")).not.toBeInTheDocument());
+    // "Edit period" is correcting FOR this value, so it's the one kept.
+    expect(useAppStore.getState().clientRows[0].visitDays).toBe(3);
   });
 
-  it("'Keep as is' leaves everything alone — no flash, value stays saved", async () => {
+  it("'Keep as is' means keep the PERIOD as is — the out-of-range day count is discarded, never saved at all", async () => {
     const user = userEvent.setup();
     await setupClientInPeriod(user);
     fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-01-06" } });
@@ -77,10 +79,14 @@ describe("client days vs. period dates", () => {
     await user.click(screen.getByRole("button", { name: "3" }));
 
     expect(useAppStore.getState().highlightedPeriodId).toBeNull();
-    expect(useAppStore.getState().clientRows[0].visitDays).toBe(3);
+    // Not 3 — the problematic value was checked BEFORE saving, so
+    // declining "Edit period" means it was never written in the first
+    // place, not written-then-silently-kept.
+    expect(useAppStore.getState().clientRows[0].visitDays).toBeNull();
+    expect(screen.getByRole("button", { name: "Set number of days" })).toHaveTextContent("—");
   });
 
-  it("more days than the whole period (no date): warns; 'Keep as is' keeps all 8 days", async () => {
+  it("more days than the whole period (no date): warns; 'Keep as is' discards the day count entirely", async () => {
     const user = userEvent.setup();
     await setupClientInPeriod(user); // period Jan 1-7 = 7 days
     resetModalOpenCount();
@@ -90,11 +96,11 @@ describe("client days vs. period dates", () => {
     await user.click(screen.getByRole("button", { name: "8" }));
 
     expect(getModalOpenCount()).toBe(1);
-    expect(useAppStore.getState().clientRows[0].visitDays).toBe(8);
-    expect(screen.getByRole("button", { name: "Set number of days" })).toHaveTextContent("8");
+    expect(useAppStore.getState().clientRows[0].visitDays).toBeNull();
+    expect(screen.getByRole("button", { name: "Set number of days" })).toHaveTextContent("—");
   });
 
-  it("a date past the period: 'Keep as is' keeps the date", async () => {
+  it("a date past the period: 'Keep as is' discards the date entirely, input reverts to empty", async () => {
     const user = userEvent.setup();
     await setupClientInPeriod(user);
     mockModalConfirm(false);
@@ -102,26 +108,7 @@ describe("client days vs. period dates", () => {
     fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-02-10" } });
 
     await waitFor(() => expect(getModalOpenCount()).toBeGreaterThan(0));
-    expect(useAppStore.getState().clientRows[0].visitDate).toBe("2026-02-10");
-    expect(screen.getByLabelText("Date")).toHaveValue("2026-02-10");
-  });
-
-  it("if something clears the date while the dialog is open, 'Keep as is' puts it back", async () => {
-    const user = userEvent.setup();
-    await setupClientInPeriod(user);
-    mockModalConfirm(false);
-    const id = useAppStore.getState().clientRows[0].id;
-    // Simulate a stray reset landing between the entry and the dialog's answer.
-    const unsubscribe = useAppStore.subscribe((state, prev) => {
-      const r = state.clientRows.find((x) => x.id === id);
-      const p = prev.clientRows.find((x) => x.id === id);
-      if (r?.visitDate === "2026-02-10" && p?.visitDate !== "2026-02-10") {
-        queueMicrotask(() => useAppStore.getState().updateClientRow(id, { visitDate: null }));
-      }
-    });
-
-    fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-02-10" } });
-    await waitFor(() => expect(useAppStore.getState().clientRows[0].visitDate).toBe("2026-02-10"));
-    unsubscribe();
+    await waitFor(() => expect(useAppStore.getState().clientRows[0].visitDate).toBeNull());
+    expect(screen.getByLabelText("Date")).toHaveValue("");
   });
 });

@@ -74,16 +74,22 @@ export function ClientRowItem({
     updateRow(row.id, { expense: String((Number.isFinite(current) ? current : 0) + added) });
   }
 
-  // Saves the visit date/days, then — if the client's days run outside its
-  // period — warns and offers to jump to the period's dates to correct them.
+  // Checks the visit date/days against the period's own date range BEFORE
+  // saving anything. If it doesn't fit, asks first: "Edit period" saves the
+  // new value and jumps to the period's dates to correct them; "Keep as is"
+  // means keep the PERIOD as it is — so the out-of-range entry is discarded
+  // entirely, leaving the row exactly as it was (not saved, then silently
+  // "kept" — genuinely never written).
   async function updateVisit(patch: { visitDate?: string | null; visitDays?: number | null }) {
     if (!row) return;
-    updateRow(row.id, patch);
 
     const period = useAppStore.getState().periods.find((p) => p.id === row.periodId);
     const from = parseDateOnly(period?.fromDate);
     const to = parseDateOnly(period?.toDate);
-    if (!period || !from || !to || to < from) return;
+    if (!period || !from || !to || to < from) {
+      updateRow(row.id, patch);
+      return;
+    }
 
     const date = parseDateOnly(patch.visitDate !== undefined ? patch.visitDate : row.visitDate);
     const days = patch.visitDays !== undefined ? patch.visitDays : row.visitDays;
@@ -98,27 +104,18 @@ export function ClientRowItem({
     } else if (days && days > daysBetweenInclusive(from, to)) {
       problem = `This client has ${days} days, but the period (${periodText}) is only ${daysBetweenInclusive(from, to)} days long.`;
     }
-    if (!problem) return;
+    if (!problem) {
+      updateRow(row.id, patch);
+      return;
+    }
 
     const goEdit = await confirmDialog(`${problem}\n\nCorrect the period dates?`, {
       confirmLabel: "Edit period",
       cancelLabel: "Keep as is",
     });
+    if (!goEdit) return; // Period kept as is -> the out-of-range entry is never saved.
 
-    // Whatever was chosen in the dialog, the client's own date/days must stay
-    // exactly as the person entered them — put them back if anything (e.g. a
-    // native date picker closing) reset them while the dialog was open.
-    const after = useAppStore.getState().clientRows.find((r) => r.id === row.id);
-    if (
-      after &&
-      ((patch.visitDate !== undefined && after.visitDate !== patch.visitDate) ||
-        (patch.visitDays !== undefined && after.visitDays !== patch.visitDays))
-    ) {
-      updateRow(row.id, patch);
-    }
-
-    if (!goEdit) return;
-
+    updateRow(row.id, patch);
     setVisitPanelOpen(false);
     setTimeout(() => {
       document
