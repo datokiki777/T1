@@ -35,6 +35,7 @@ export function ClientRowItem({
   const confirmDestructive = useAppStore((s) => s.settings.confirmDestructiveActions);
   const [commentOpen, setCommentOpen] = useState(false);
   const [visitPanelOpen, setVisitPanelOpen] = useState(false);
+  const [daysPickerOpen, setDaysPickerOpen] = useState(false);
   const highlightPeriodDates = useAppStore((s) => s.highlightPeriodDates);
   // Expense value from before the last "+" add, so it can be undone.
   const [expenseUndo, setExpenseUndo] = useState<string | null>(null);
@@ -294,18 +295,14 @@ export function ClientRowItem({
             </label>
             <div className={styles.visitPanelField}>
               <span>Days</span>
-              <div className={styles.visitDayButtons}>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    className={row.visitDays === n ? styles.visitDayBtnActive : styles.visitDayBtn}
-                    onClick={() => updateVisit({ visitDays: row.visitDays === n ? null : n })}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
+              <button
+                type="button"
+                className={styles.daysPickerBtn}
+                aria-label="Set number of days"
+                onClick={() => setDaysPickerOpen(true)}
+              >
+                {row.visitDays ?? "—"}
+              </button>
             </div>
             <button
               type="button"
@@ -314,6 +311,39 @@ export function ClientRowItem({
             >
               Done
             </button>
+          </div>
+        </td>
+      </tr>
+    )}
+    {daysPickerOpen && (
+      <tr>
+        <td colSpan={6} style={{ padding: 0, border: "none" }}>
+          <div className={styles.daysModalOverlay} onClick={() => setDaysPickerOpen(false)}>
+            <div className={styles.daysModalCard} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.daysModalTitle}>How many days?</div>
+              <div className={styles.daysGrid}>
+                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={row.visitDays === n ? styles.visitDayBtnActive : styles.visitDayBtn}
+                    onClick={() => {
+                      updateVisit({ visitDays: row.visitDays === n ? null : n });
+                      setDaysPickerOpen(false);
+                    }}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className={styles.daysModalClose}
+                onClick={() => setDaysPickerOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </td>
       </tr>

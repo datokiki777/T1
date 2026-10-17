@@ -130,18 +130,74 @@
   font-size: var(--font-sm);
 }
 
-.visitDayButtons {
+.daysPickerBtn {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 42px;
+}
+
+.daysModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
   display: flex;
-  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: var(--space-6);
+}
+
+.daysModalCard {
+  width: 100%;
+  max-width: 300px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.daysModalTitle {
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.daysModalClose {
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-md);
+  font-weight: 600;
+  align-self: center;
 }
 
 .visitDayBtn,
 .visitDayBtnActive {
-  width: 30px;
-  height: 30px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: var(--font-sm);
+  font-size: var(--font-base);
   font-weight: 600;
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--border-soft);

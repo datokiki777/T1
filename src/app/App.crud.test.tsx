@@ -646,8 +646,11 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
 
     await user.click(calendarBtn);
     expect(screen.getByLabelText("Date")).toBeInTheDocument();
-    const dayButtons = screen.getAllByRole("button").filter((b) => /^[1-5]$/.test(b.textContent ?? ""));
-    expect(dayButtons).toHaveLength(5);
+
+    // Opens a modal with 10 day options (1-10), not an inline row.
+    await user.click(screen.getByRole("button", { name: "Set number of days" }));
+    const dayButtons = screen.getAllByRole("button").filter((b) => /^(10|[1-9])$/.test(b.textContent ?? ""));
+    expect(dayButtons).toHaveLength(10);
 
     // Set only the day count, no date — perfectly valid on its own.
     await user.click(dayButtons[2]); // "3"
@@ -662,6 +665,49 @@ describe("Client table CRUD (end-to-end against real IndexedDB)", () => {
     fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-10-15" } });
     await user.click(screen.getByRole("button", { name: "Done" }));
     expect(calendarBtn.className).toMatch(/visitBtnSet/);
+  });
+
+  it("the days picker modal shows the currently picked day as active, and Cancel/tapping outside closes it without changing anything", async () => {
+    const user = userEvent.setup();
+    mockModalPrompt("Days Modal Group");
+
+    render(<App />);
+    await screen.findByText("Select group");
+    await openGroupMenu();
+    await user.click(screen.getByRole("button", { name: "+ Group" }));
+    await user.click(screen.getByRole("button", { name: "+ New period" }));
+    await expandFirstPeriod(user);
+    await user.click(screen.getByRole("button", { name: "+ Add client" }));
+
+    const table = screen.getByRole("table");
+    await user.type(within(table).getByPlaceholderText("Client name"), "Days Modal Client");
+    await user.click(screen.getByRole("button", { name: "Set visit date and days" }));
+
+    const daysBtn = screen.getByRole("button", { name: "Set number of days" });
+    expect(daysBtn).toHaveTextContent("—");
+    await user.click(daysBtn);
+
+    // Cancel closes without changing anything.
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByRole("button", { name: "Set number of days" })).toHaveTextContent("—");
+
+    // Pick 7, confirm it shows as active and the trigger now reads "7".
+    await user.click(daysBtn);
+    const dayButtons = screen.getAllByRole("button").filter((b) => /^(10|[1-9])$/.test(b.textContent ?? ""));
+    await user.click(dayButtons[6]); // "7"
+    expect(screen.getByRole("button", { name: "Set number of days" })).toHaveTextContent("7");
+
+    // Reopen — "7" is now styled as the active option. Scoped to the
+    // modal's day grid — the trigger button itself now also reads "7".
+    await user.click(screen.getByRole("button", { name: "Set number of days" }));
+    const daysGrid = screen.getByText("How many days?").closest('[class*="daysModalCard"]') as HTMLElement;
+    const seven = within(daysGrid).getAllByRole("button").find((b) => b.textContent === "7")!;
+    expect(seven.className).toMatch(/visitDayBtnActive/);
+
+    // Tapping outside (the overlay) also closes it, no change.
+    const overlay = screen.getByText("How many days?").closest('[class*="daysModalOverlay"]') as HTMLElement;
+    await user.click(overlay);
+    expect(screen.getByRole("button", { name: "Set number of days" })).toHaveTextContent("7");
   });
 
   it("the startup splash (CT logo + spinner) is tied to real `loaded` state, fades out, and is fully removed once the app has settled", async () => {

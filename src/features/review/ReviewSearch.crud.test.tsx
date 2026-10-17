@@ -492,7 +492,8 @@ describe("Review/Search module — matches the old app's search behavior", () =>
     // Set a visit date + days in Edit mode first.
     await user.click(screen.getByRole("button", { name: "Set visit date and days" }));
     fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-10-15" } });
-    const dayButtons = screen.getAllByRole("button").filter((b) => /^[1-5]$/.test(b.textContent ?? ""));
+    await user.click(screen.getByRole("button", { name: "Set number of days" }));
+    const dayButtons = screen.getAllByRole("button").filter((b) => /^(10|[1-9])$/.test(b.textContent ?? ""));
     await user.click(dayButtons[1]); // "2"
     await user.click(screen.getByRole("button", { name: "Done" }));
 

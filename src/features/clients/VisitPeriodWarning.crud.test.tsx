@@ -43,6 +43,7 @@ describe("client days vs. period dates", () => {
     resetModalOpenCount();
 
     fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-01-03" } });
+    await user.click(screen.getByRole("button", { name: "Set number of days" }));
     await user.click(screen.getByRole("button", { name: "3" })); // Jan 3-5, inside Jan 1-7
 
     expect(getModalOpenCount()).toBe(0);
@@ -56,6 +57,7 @@ describe("client days vs. period dates", () => {
 
     resetModalOpenCount();
     mockModalConfirm(true); // "Edit period"
+    await user.click(screen.getByRole("button", { name: "Set number of days" }));
     await user.click(screen.getByRole("button", { name: "3" })); // Jan 6-8 > period end Jan 7
 
     expect(getModalOpenCount()).toBe(1);
@@ -71,6 +73,7 @@ describe("client days vs. period dates", () => {
     fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-01-06" } });
 
     mockModalConfirm(false); // "Keep as is"
+    await user.click(screen.getByRole("button", { name: "Set number of days" }));
     await user.click(screen.getByRole("button", { name: "3" }));
 
     expect(useAppStore.getState().highlightedPeriodId).toBeNull();
