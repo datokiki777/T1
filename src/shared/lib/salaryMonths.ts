@@ -81,9 +81,12 @@ export function rowAmounts(row: Pick<ClientRow, "amount" | "expense">): {
   };
 }
 
+/** The days picker offers 1..10 (see ClientRowItem). */
+export const MAX_VISIT_DAYS = 10;
+
 export function rowSpanDays(row: Pick<ClientRow, "visitDays">): number {
   const n = Math.round(row.visitDays ?? 1);
-  return Math.min(5, Math.max(1, Number.isFinite(n) ? n : 1));
+  return Math.min(MAX_VISIT_DAYS, Math.max(1, Number.isFinite(n) ? n : 1));
 }
 
 function periodDate(period: Period | undefined): Date | null {

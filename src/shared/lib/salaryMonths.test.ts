@@ -203,4 +203,15 @@ describe("computeGroupSalaryMonths", () => {
     expect(salaryMonthLength(2026 * 12 + 1, 7)).toBe(28);
     expect(salaryMonthLength(2026 * 12 + 0, 7)).toBe(31);
   });
+
+  it("client days up to 10 are all counted (the days picker offers 1-10)", () => {
+    const g = { ...group, defaultSalary: 3100 };
+    const r = computeGroupSalaryMonths(
+      g,
+      [period],
+      [row({ visitDate: "2026-01-07", visitDays: 8, status: "unpaid" })]
+    );
+    expect(r.months[0].unpaidDays).toBe(8);
+    expect(r.months[0].salary).toBeCloseTo(800);
+  });
 });

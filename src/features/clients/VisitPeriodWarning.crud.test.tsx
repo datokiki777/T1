@@ -79,4 +79,49 @@ describe("client days vs. period dates", () => {
     expect(useAppStore.getState().highlightedPeriodId).toBeNull();
     expect(useAppStore.getState().clientRows[0].visitDays).toBe(3);
   });
+
+  it("more days than the whole period (no date): warns; 'Keep as is' keeps all 8 days", async () => {
+    const user = userEvent.setup();
+    await setupClientInPeriod(user); // period Jan 1-7 = 7 days
+    resetModalOpenCount();
+    mockModalConfirm(false); // "Keep as is"
+
+    await user.click(screen.getByRole("button", { name: "Set number of days" }));
+    await user.click(screen.getByRole("button", { name: "8" }));
+
+    expect(getModalOpenCount()).toBe(1);
+    expect(useAppStore.getState().clientRows[0].visitDays).toBe(8);
+    expect(screen.getByRole("button", { name: "Set number of days" })).toHaveTextContent("8");
+  });
+
+  it("a date past the period: 'Keep as is' keeps the date", async () => {
+    const user = userEvent.setup();
+    await setupClientInPeriod(user);
+    mockModalConfirm(false);
+
+    fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-02-10" } });
+
+    await waitFor(() => expect(getModalOpenCount()).toBeGreaterThan(0));
+    expect(useAppStore.getState().clientRows[0].visitDate).toBe("2026-02-10");
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-02-10");
+  });
+
+  it("if something clears the date while the dialog is open, 'Keep as is' puts it back", async () => {
+    const user = userEvent.setup();
+    await setupClientInPeriod(user);
+    mockModalConfirm(false);
+    const id = useAppStore.getState().clientRows[0].id;
+    // Simulate a stray reset landing between the entry and the dialog's answer.
+    const unsubscribe = useAppStore.subscribe((state, prev) => {
+      const r = state.clientRows.find((x) => x.id === id);
+      const p = prev.clientRows.find((x) => x.id === id);
+      if (r?.visitDate === "2026-02-10" && p?.visitDate !== "2026-02-10") {
+        queueMicrotask(() => useAppStore.getState().updateClientRow(id, { visitDate: null }));
+      }
+    });
+
+    fireEvent.change(screen.getByLabelText("Date"), { target: { value: "2026-02-10" } });
+    await waitFor(() => expect(useAppStore.getState().clientRows[0].visitDate).toBe("2026-02-10"));
+    unsubscribe();
+  });
 });

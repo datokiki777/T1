@@ -47,7 +47,7 @@ export interface ClientRow {
    * started. Purely informational: never affects any calculation, only
    * shown + editable via the calendar icon on the row/card. */
   visitDate: string | null;
-  /** How many days this client's job took (1-5) — set via the 1-5
+  /** How many days this client's job took (1-10) — set via the 1-5
    * buttons alongside visitDate. Purely informational, same as
    * visitDate. */
   visitDays: number | null;

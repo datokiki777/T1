@@ -104,6 +104,19 @@ export function ClientRowItem({
       confirmLabel: "Edit period",
       cancelLabel: "Keep as is",
     });
+
+    // Whatever was chosen in the dialog, the client's own date/days must stay
+    // exactly as the person entered them — put them back if anything (e.g. a
+    // native date picker closing) reset them while the dialog was open.
+    const after = useAppStore.getState().clientRows.find((r) => r.id === row.id);
+    if (
+      after &&
+      ((patch.visitDate !== undefined && after.visitDate !== patch.visitDate) ||
+        (patch.visitDays !== undefined && after.visitDays !== patch.visitDays))
+    ) {
+      updateRow(row.id, patch);
+    }
+
     if (!goEdit) return;
 
     setVisitPanelOpen(false);
