@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useAppStore } from "../../app/store";
 import { confirmDialog, promptDialog } from "../../shared/modal/modalStore";
 import { NumericTextField } from "../../shared/ui/NumericTextField";
 import { getGroupById } from "../../shared/lib/entityLookup";
+import { parseDateOnly } from "../../shared/lib/dates";
 import styles from "./GroupSwitcher.module.css";
 
 /** How long a press must be held before it counts as "long press" (ms). */
@@ -10,6 +11,7 @@ export const GROUP_SWITCHER_LONG_PRESS_MS = 500;
 
 export function GroupSwitcher() {
   const groups = useAppStore((s) => s.groups);
+  const periods = useAppStore((s) => s.periods);
   const workspace = useAppStore((s) => s.workspace);
   const mode = useAppStore((s) => s.mode);
   const activeGroupId = useAppStore((s) => s.activeGroupId);
@@ -36,6 +38,22 @@ export function GroupSwitcher() {
     workspace === "active" ? !g.archived : g.archived
   );
   const activeGroup = getGroupById(groups, activeGroupId);
+
+  // Picker order: most recently active group (by its latest period's own
+  // date) first, oldest last — separate from visibleGroups/cycleGroup's
+  // order so short-tap cycling behavior is unaffected.
+  const pickerGroups = useMemo(() => {
+    function latestDate(groupId: string): number {
+      let latest = -Infinity;
+      for (const p of periods) {
+        if (p.groupId !== groupId) continue;
+        const d = parseDateOnly(p.toDate) ?? parseDateOnly(p.fromDate);
+        if (d && d.getTime() > latest) latest = d.getTime();
+      }
+      return latest;
+    }
+    return [...visibleGroups].sort((a, b) => latestDate(b.id) - latestDate(a.id));
+  }, [visibleGroups, periods]);
 
   function cycleGroup() {
     if (visibleGroups.length === 0) return;
@@ -135,7 +153,7 @@ export function GroupSwitcher() {
         >
           <div className={styles.row}>
             <button
-              className={styles.btn}
+              className={styles.btnSwitch}
               onClick={() => {
                 setMenuOpen(false);
                 setGroupPickerOpen(true);
@@ -216,11 +234,11 @@ export function GroupSwitcher() {
             <div className={styles.pickerTitle}>
               Switch group ({workspace === "active" ? "Active" : "Archive"})
             </div>
-            {visibleGroups.length === 0 ? (
+            {pickerGroups.length === 0 ? (
               <div className={styles.pickerEmpty}>No groups here yet.</div>
             ) : (
               <div className={styles.pickerList}>
-                {visibleGroups.map((g) => (
+                {pickerGroups.map((g) => (
                   <button
                     key={g.id}
                     type="button"

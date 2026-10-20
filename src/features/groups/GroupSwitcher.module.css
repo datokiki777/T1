@@ -117,6 +117,16 @@
   color: var(--danger);
 }
 
+/* A distinct blue tint — "Switch group" is a navigation action, not a
+   structural edit like the other buttons in this row, so it reads
+   differently at a glance. */
+.btnSwitch {
+  composes: btn;
+  background: rgba(122, 162, 255, 0.16);
+  border-color: rgba(122, 162, 255, 0.35);
+  color: #b7cbff;
+}
+
 /* Group picker — same overlay+card modal language as the currency
    symbol picker and the visit-date modal. */
 .pickerOverlay {
@@ -163,6 +173,13 @@
   flex-direction: column;
   gap: 6px;
   overflow-y: auto;
+  /* Lets this shrink below its content's natural height within the
+     card's flex column, so it's the list that scrolls internally
+     (title/Cancel stay put) once there are more groups than fit —
+     without this, a flex child's default min-height would just grow
+     the whole card past its max-height instead. */
+  min-height: 0;
+  flex: 1;
 }
 
 .pickerItem,

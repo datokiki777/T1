@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import App from "../../App";
 import { db } from "../../db/database";
-import { resetAppForTest, openGroupMenu, mockModalPrompt } from "../../test/resetAppForTest";
+import { resetAppForTest, openGroupMenu, expandFirstPeriod, mockModalPrompt } from "../../test/resetAppForTest";
 import { GROUP_SWITCHER_LONG_PRESS_MS } from "./GroupSwitcher";
 
 async function addGroupViaMenu(user: ReturnType<typeof userEvent.setup>, name: string) {
@@ -314,4 +314,58 @@ describe("GroupSwitcher — group picker modal", () => {
     expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
     expect(screen.getByTestId("group-switcher-btn")).toHaveTextContent("Still Active Group 2");
   });
+
+  it("orders groups by their latest period's date — most recent first, oldest last; groups with no periods sort to the bottom", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Select group");
+
+    async function addGroupWithPeriod(name: string, from: string, to: string) {
+      await addGroupViaMenu(user, name);
+      await openGroupMenu(); // close the menu addGroupViaMenu left open
+      await user.click(screen.getByRole("button", { name: "+ New period" }));
+      await expandFirstPeriod(user);
+      fireEvent.change(screen.getByLabelText("From"), { target: { value: from } });
+      fireEvent.change(screen.getByLabelText("To"), { target: { value: to } });
+    }
+
+    await addGroupWithPeriod("March Group", "2026-03-01", "2026-03-07");
+    await addGroupWithPeriod("January Group", "2026-01-01", "2026-01-07");
+    await addGroupWithPeriod("June Group", "2026-06-01", "2026-06-07");
+    await addGroupViaMenu(user, "No Periods Group"); // never gets a period
+    // Menu is already open from addGroupViaMenu above.
+    await user.click(screen.getByRole("button", { name: "Switch group" }));
+
+    const pickerCard = screen.getByText("Switch group (Active)").closest('[class*="pickerCard"]') as HTMLElement;
+    const names = within(pickerCard)
+      .getAllByRole("button")
+      .map((b) => b.textContent)
+      .filter((t): t is string => t !== "Cancel" && t !== null);
+
+    expect(names).toEqual(["June Group", "March Group", "January Group", "No Periods Group"]);
+  }, 30000);
+
+  it("the group list renders every group even when there are many — nothing is silently capped/hidden, so there's actually something to scroll through", async () => {
+    // jsdom doesn't compute real layout or load the actual CSS rules, so
+    // the scroll/max-height behavior itself (verified by hand via the
+    // .pickerCard/.pickerList CSS and a visual check) can't be asserted
+    // here — this covers the part that is testable: every group makes
+    // it into the list, none dropped.
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Select group");
+
+    for (let i = 1; i <= 15; i++) {
+      await addGroupViaMenu(user, `Group ${i}`);
+      await openGroupMenu(); // close the menu left open
+    }
+
+    await openGroupMenu();
+    await user.click(screen.getByRole("button", { name: "Switch group" }));
+
+    const pickerCard = screen.getByText("Switch group (Active)").closest('[class*="pickerCard"]') as HTMLElement;
+    for (let i = 1; i <= 15; i++) {
+      expect(within(pickerCard).getByText(`Group ${i}`)).toBeInTheDocument();
+    }
+  }, 45000);
 });
