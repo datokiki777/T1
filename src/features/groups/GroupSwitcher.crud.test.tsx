@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "../../App";
 import { db } from "../../db/database";
@@ -222,5 +222,96 @@ describe("GroupSwitcher — tap cycles groups, long-press opens the management m
     await user.type(screen.getByLabelText("Current car number"), "108");
     expect(switcherBtn).toHaveTextContent("Car Switcher Group");
     expect(switcherBtn).toHaveTextContent("🚗 108");
+  });
+});
+describe("GroupSwitcher — group picker modal", () => {
+  beforeEach(async () => {
+    await resetAppForTest();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("in Edit mode, long-press opens the usual settings menu (not the picker); its new 'Switch group' button opens the picker, which lists groups with the active one highlighted", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Select group");
+    await addGroupViaMenu(user, "Alpha");
+    await addGroupViaMenu(user, "Beta");
+
+    // Menu is already open from addGroupViaMenu above — still the
+    // settings menu, not the picker — "+ Group"/"Rename" etc.
+    // are present, confirming the long-press behavior in Edit is
+    // unchanged.
+    expect(screen.getByRole("button", { name: "+ Group" })).toBeInTheDocument();
+    expect(screen.queryByText(/Switch group \(/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Switch group" }));
+    const pickerCard = screen.getByText("Switch group (Active)").closest('[class*="pickerCard"]') as HTMLElement;
+
+    const alphaOption = within(pickerCard).getByRole("button", { name: /Alpha/ });
+    const betaOption = within(pickerCard).getByRole("button", { name: /Beta/ });
+    // "Beta" was added last, so it's the active group — styled as such.
+    expect(betaOption.className).toMatch(/pickerItemActive/);
+    expect(alphaOption.className).not.toMatch(/pickerItemActive/);
+
+    await user.click(alphaOption);
+    expect(screen.queryByText("Switch group (Active)")).not.toBeInTheDocument();
+    expect(screen.getByTestId("group-switcher-btn")).toHaveTextContent("Alpha");
+  });
+
+  it("in Review mode, long-press opens the group picker directly (not the faded settings menu)", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Select group");
+    await addGroupViaMenu(user, "Review Picker Group");
+    await addGroupViaMenu(user, "Second Group");
+    await openGroupMenu(); // close the menu left open by addGroupViaMenu
+
+    await user.click(screen.getByRole("tab", { name: "Review" }));
+    await openGroupMenu();
+
+    expect(screen.getByText("Switch group (Active)")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "+ Group" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Review Picker Group/ }));
+    expect(screen.queryByText("Switch group (Active)")).not.toBeInTheDocument();
+    expect(screen.getByTestId("group-switcher-btn")).toHaveTextContent("Review Picker Group");
+  });
+
+  it("only lists groups in the current workspace (Active vs Archive), and Cancel/tapping outside closes without changing anything", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText("Select group");
+    await addGroupViaMenu(user, "Still Active Group");
+    await addGroupViaMenu(user, "Soon Archived Group");
+
+    // Archive "Soon Archived Group" (it's the current active one).
+    // Menu is already open from the addGroupViaMenu calls above.
+    await user.click(screen.getByRole("button", { name: "Archive / Restore" }));
+
+    await addGroupViaMenu(user, "Still Active Group 2");
+    // Menu is already open from addGroupViaMenu above.
+    await user.click(screen.getByRole("button", { name: "Switch group" }));
+
+    const activeList = screen.getByText("Switch group (Active)").closest('[class*="pickerCard"]') as HTMLElement;
+    expect(within(activeList).getByText("Still Active Group")).toBeInTheDocument();
+    expect(within(activeList).getByText("Still Active Group 2")).toBeInTheDocument();
+    expect(within(activeList).queryByText("Soon Archived Group")).not.toBeInTheDocument();
+
+    // Cancel closes without switching.
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByTestId("group-switcher-btn")).toHaveTextContent("Still Active Group 2");
+
+    // Reopen (opening the picker from the settings menu closes that menu
+    // too, so a fresh long-press is needed to get back to "Switch group"),
+    // then tap the overlay outside the card — also closes, no switch.
+    await openGroupMenu();
+    await user.click(screen.getByRole("button", { name: "Switch group" }));
+    const overlay = screen.getByText("Switch group (Active)").closest('[class*="pickerOverlay"]') as HTMLElement;
+    await user.click(overlay);
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("group-switcher-btn")).toHaveTextContent("Still Active Group 2");
   });
 });

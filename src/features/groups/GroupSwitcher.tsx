@@ -28,6 +28,7 @@ export function GroupSwitcher() {
   const isReviewMode = mode === "review";
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [groupPickerOpen, setGroupPickerOpen] = useState(false);
   const pressTimer = useRef<number | null>(null);
   const longPressFired = useRef(false);
 
@@ -55,7 +56,17 @@ export function GroupSwitcher() {
     clearPressTimer();
     pressTimer.current = window.setTimeout(() => {
       longPressFired.current = true;
-      setMenuOpen((v) => !v);
+      // Review mode's settings menu is entirely disabled/faded (nothing
+      // in it does anything useful there) — a long-press jumps straight
+      // to the group picker instead, which is actually useful there.
+      // Edit mode keeps the existing settings menu (rate/salary/car/
+      // rename/delete), with its own "Switch group" button opening the
+      // same picker.
+      if (isReviewMode) {
+        setGroupPickerOpen((v) => !v);
+      } else {
+        setMenuOpen((v) => !v);
+      }
     }, GROUP_SWITCHER_LONG_PRESS_MS);
   }
 
@@ -125,6 +136,16 @@ export function GroupSwitcher() {
           <div className={styles.row}>
             <button
               className={styles.btn}
+              onClick={() => {
+                setMenuOpen(false);
+                setGroupPickerOpen(true);
+              }}
+              type="button"
+            >
+              Switch group
+            </button>
+            <button
+              className={styles.btn}
               onClick={handleAddGroup}
               type="button"
               disabled={isReviewMode}
@@ -185,6 +206,43 @@ export function GroupSwitcher() {
                 }}
               />
             </label>
+          </div>
+        </div>
+      )}
+
+      {groupPickerOpen && (
+        <div className={styles.pickerOverlay} onClick={() => setGroupPickerOpen(false)}>
+          <div className={styles.pickerCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.pickerTitle}>
+              Switch group ({workspace === "active" ? "Active" : "Archive"})
+            </div>
+            {visibleGroups.length === 0 ? (
+              <div className={styles.pickerEmpty}>No groups here yet.</div>
+            ) : (
+              <div className={styles.pickerList}>
+                {visibleGroups.map((g) => (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className={g.id === activeGroupId ? styles.pickerItemActive : styles.pickerItem}
+                    onClick={() => {
+                      setActiveGroup(g.id);
+                      setGroupPickerOpen(false);
+                    }}
+                  >
+                    <span>{g.name}</span>
+                    {g.currentCarNumber && <span className={styles.pickerItemCar}>🚗 {g.currentCarNumber}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              className={styles.pickerClose}
+              onClick={() => setGroupPickerOpen(false)}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
