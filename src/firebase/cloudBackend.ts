@@ -8,6 +8,28 @@ export interface HistoryEntry {
   savedAt: string;
 }
 
+/** Daily history copies kept in the cloud — once a 31st would be
+ * written, the oldest is deleted. */
+export const HISTORY_MAX_ENTRIES = 30;
+
+/** How long cloud data survives without the app being used: every write
+ * (and every successful sync) pushes the document's expireAt this many
+ * months into the future; Firestore's TTL policy deletes it once that
+ * date passes. */
+export const CLOUD_RETENTION_MONTHS = 6;
+
+/** `from` + CLOUD_RETENTION_MONTHS calendar months, clamping the day so
+ * e.g. Aug 31 + 6 months lands on Feb 28, not Mar 3. */
+export function computeExpireAt(from: Date = new Date()): Date {
+  const d = new Date(from);
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + CLOUD_RETENTION_MONTHS);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, lastDay));
+  return d;
+}
+
 /**
  * Thin abstraction over the cloud backup store: one live "main" document
  * plus a rolling daily history. Kept as an interface (rather than
@@ -21,6 +43,11 @@ export interface CloudBackend {
    * repeated saves the same day overwrite that day's entry, matching the
    * old app's daily-history design). */
   writeHistorySnapshot(snapshot: CloudSnapshot): Promise<void>;
+  /** Marks the live main document as "used just now" (pushes its expiry
+   * out again) without rewriting its data — called when the app syncs
+   * but has nothing to upload, so an actively-used app's cloud copy
+   * never ages out just because nothing changed for a while. */
+  refreshExpiry(): Promise<void>;
   listHistory(): Promise<HistoryEntry[]>;
   readHistorySnapshot(id: string): Promise<CloudSnapshot | null>;
 }
@@ -34,18 +61,36 @@ function todayKey(): string {
  * without touching a real project). Mirrors the real backend's async
  * shape exactly.
  */
-export function createInMemoryCloudBackend(initial: CloudSnapshot | null = null): CloudBackend {
+export function createInMemoryCloudBackend(
+  initial: CloudSnapshot | null = null
+): CloudBackend & {
+  /** Test-only peeks at the expiry the real backend stores as expireAt. */
+  getMainExpireAt(): Date | null;
+  getHistoryExpireAt(id: string): Date | null;
+} {
   let stored: CloudSnapshot | null = initial;
-  const history = new Map<string, { snapshot: CloudSnapshot; savedAt: string }>();
+  let mainExpireAt: Date | null = initial ? computeExpireAt() : null;
+  const history = new Map<string, { snapshot: CloudSnapshot; savedAt: string; expireAt: Date }>();
   return {
     async readMainSnapshot() {
       return stored;
     },
     async writeMainSnapshot(snapshot) {
       stored = snapshot;
+      mainExpireAt = computeExpireAt();
+    },
+    async refreshExpiry() {
+      if (stored) mainExpireAt = computeExpireAt();
     },
     async writeHistorySnapshot(snapshot) {
-      history.set(todayKey(), { snapshot, savedAt: new Date().toISOString() });
+      history.set(todayKey(), {
+        snapshot,
+        savedAt: new Date().toISOString(),
+        expireAt: computeExpireAt(),
+      });
+      // Keep only the newest HISTORY_MAX_ENTRIES days — the oldest go first.
+      const idsNewestFirst = Array.from(history.keys()).sort((a, b) => b.localeCompare(a));
+      for (const id of idsNewestFirst.slice(HISTORY_MAX_ENTRIES)) history.delete(id);
     },
     async listHistory() {
       return Array.from(history.entries())
@@ -55,6 +100,8 @@ export function createInMemoryCloudBackend(initial: CloudSnapshot | null = null)
     async readHistorySnapshot(id) {
       return history.get(id)?.snapshot ?? null;
     },
+    getMainExpireAt: () => mainExpireAt,
+    getHistoryExpireAt: (id) => history.get(id)?.expireAt ?? null,
   };
 }
 
@@ -74,8 +121,20 @@ export function createInMemoryCloudBackend(initial: CloudSnapshot | null = null)
  */
 export async function getFirestoreCloudBackend(uid: string): Promise<CloudBackend> {
   const { getFirebaseApp } = await import("./config");
-  const { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, orderBy, limit } =
-    await import("firebase/firestore");
+  const {
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    deleteDoc,
+    collection,
+    getDocs,
+    getCountFromServer,
+    query,
+    orderBy,
+    limit,
+  } = await import("firebase/firestore");
 
   const app = getFirebaseApp();
   const firestore = getFirestore(app);
@@ -93,20 +152,48 @@ export async function getFirestoreCloudBackend(uid: string): Promise<CloudBacken
           await setDoc(mainDocRef, {
             data: snapshot,
             updatedAt: new Date().toISOString(),
+            // Firestore TTL (configured on this field in the console)
+            // deletes the document once this passes — see computeExpireAt.
+            expireAt: computeExpireAt(),
           });
         },
+        async refreshExpiry() {
+          try {
+            await updateDoc(mainDocRef, { expireAt: computeExpireAt() });
+          } catch {
+            // No main document yet (nothing to keep alive) — nothing to do.
+          }
+        },
         async writeHistorySnapshot(snapshot) {
+          // One entry per calendar day (the doc id is the date), so
+          // repeated saves the same day just overwrite that day's copy.
           const id = todayKey();
           const savedAt = new Date().toISOString();
-          // 30-day rolling window, matching the old app — Firestore TTL
-          // (if configured on this field in the console) will expire it
-          // automatically; harmless if TTL isn't configured, it just
-          // means old entries stay listed.
-          const expireAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-          await setDoc(doc(historyCollection, id), { data: snapshot, savedAt, expireAt });
+          await setDoc(doc(historyCollection, id), {
+            data: snapshot,
+            savedAt,
+            expireAt: computeExpireAt(),
+          });
+
+          // Cap at HISTORY_MAX_ENTRIES: count first (a cheap aggregate
+          // query, no document bodies), and only when over the cap fetch
+          // and delete exactly the surplus oldest entries. Best-effort —
+          // a failed cleanup must never fail the save itself.
+          try {
+            const total = (await getCountFromServer(historyCollection)).data().count;
+            const surplus = total - HISTORY_MAX_ENTRIES;
+            if (surplus > 0) {
+              const oldest = await getDocs(
+                query(historyCollection, orderBy("savedAt", "asc"), limit(surplus))
+              );
+              await Promise.all(oldest.docs.map((d) => deleteDoc(d.ref)));
+            }
+          } catch (error) {
+            console.warn("Cloud history cleanup skipped:", error);
+          }
         },
         async listHistory() {
-          const q = query(historyCollection, orderBy("savedAt", "desc"), limit(30));
+          const q = query(historyCollection, orderBy("savedAt", "desc"), limit(HISTORY_MAX_ENTRIES));
           const snaps = await getDocs(q);
           return snaps.docs.map((d) => ({
             id: d.id,
