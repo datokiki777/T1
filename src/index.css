@@ -58,6 +58,10 @@ body {
   background: var(--surface-1);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Turns off the browser's pull-down-to-refresh gesture. `contain` (not
+     `none`) deliberately — it keeps the normal stretch/glow effect at the
+     end of scrolling, which `none` would remove too. */
+  overscroll-behavior-y: contain;
 }
 
 #root {
