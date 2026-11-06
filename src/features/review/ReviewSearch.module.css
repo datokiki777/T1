@@ -123,3 +123,162 @@
 .cityLink:active {
   opacity: 0.7;
 }
+
+/* Worker summary — a card above the client results when the typed text
+   matches group names, and the info-only modal it opens. */
+.workerCard {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: left;
+  background: rgba(122, 162, 255, 0.12);
+  border: 1px solid rgba(122, 162, 255, 0.35);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-5);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.workerIcon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.workerText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.workerText b {
+  overflow-wrap: anywhere;
+}
+
+.workerHint {
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+}
+
+.workerOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  padding: var(--space-6);
+}
+
+.workerModalCard {
+  width: 100%;
+  max-width: 340px;
+  max-height: 80vh;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.workerModalTitle {
+  font-size: var(--font-base);
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.workerGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.workerGroupRow {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.workerGroupName {
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.workerTotal {
+  border-top: 1px solid var(--border-soft);
+  padding-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.workerTotalLabel {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.workerNote {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.workerClose {
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  color: var(--text);
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-md);
+  font-weight: 600;
+  align-self: center;
+}
+
+.countPills,
+.countPillsLarge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.countPill {
+  font-size: var(--font-xs);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  padding: 2px 10px;
+  white-space: nowrap;
+  color: #071633;
+}
+
+.countPillsLarge .countPill {
+  font-size: var(--font-sm);
+  padding: 4px 12px;
+}
+
+.countDone { background: var(--success); }
+.countFail { background: var(--danger); }
+.countFixed { background: var(--accent); }
+.countWrong { background: #b892ff; }
+.countUnpaid { background: #b9f3c8; }
+
+/* A zero stays visible (so all four are always there) but quiet. */
+.countZero {
+  opacity: 0.35;
+}

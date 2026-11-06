@@ -4,6 +4,8 @@ import { buildSearchIndex, searchIndex, highlightParts, type SearchIndexItem } f
 import { useOpenClientInEdit } from "../navigation/useOpenClientInEdit";
 import { confirmDialog } from "../../shared/modal/modalStore";
 import { looksLikeUrl } from "../../shared/lib/url";
+import { findWorkerGroups } from "../../shared/lib/workerSearch";
+import type { StatusCounts } from "../../shared/types/domain";
 import styles from "./ReviewSearch.module.css";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -25,8 +27,32 @@ function Highlighted({ text, query }: { text: string; query: string }) {
   );
 }
 
+const COUNT_PILLS: { key: keyof StatusCounts; label: string; className: string }[] = [
+  { key: "done", label: "Done", className: styles.countDone },
+  { key: "fail", label: "Fail", className: styles.countFail },
+  { key: "fixed", label: "Fixed", className: styles.countFixed },
+  { key: "wrong", label: "Wrong", className: styles.countWrong },
+  { key: "unpaid", label: "Unpaid", className: styles.countUnpaid },
+];
+
+function CountPills({ counts, large }: { counts: StatusCounts; large?: boolean }) {
+  return (
+    <div className={large ? styles.countPillsLarge : styles.countPills}>
+      {COUNT_PILLS.map(({ key, label, className }) => (
+        <span
+          key={key}
+          className={`${styles.countPill} ${className}${counts[key] === 0 ? ` ${styles.countZero}` : ""}`}
+        >
+          {label} {counts[key]}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function ReviewSearch() {
   const [query, setQuery] = useState("");
+  const [workerModalOpen, setWorkerModalOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   const groups = useAppStore((s) => s.groups);
@@ -36,6 +62,18 @@ export function ReviewSearch() {
 
   const index = useMemo(() => buildSearchIndex(groups, periods, clientRows), [groups, periods, clientRows]);
   const results = useMemo(() => searchIndex(index, query), [index, query]);
+  // The typed text is also tried as a worker name against group names
+  // (active and archived) — informational only, see workerSearch.ts.
+  const workerResult = useMemo(
+    () => findWorkerGroups(query, groups, periods, clientRows),
+    [query, groups, periods, clientRows]
+  );
+
+  // Never leave the worker summary open (or ready to pop back open) once
+  // the typed text changes or is cleared.
+  useEffect(() => {
+    setWorkerModalOpen(false);
+  }, [query]);
 
   // Click outside the search box clears it, matching the old app's pointerdown handler.
   useEffect(() => {
@@ -68,7 +106,7 @@ export function ReviewSearch() {
       <input
         className={styles.searchInput}
         type="text"
-        placeholder="Search client by name, address, or note..."
+        placeholder="Search client, address, note or worker…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -77,7 +115,22 @@ export function ReviewSearch() {
 
       {query.trim() && (
         <div className={styles.results}>
-          {results.length === 0 && <div className={styles.empty}>No results</div>}
+          {workerResult && (
+            <button
+              type="button"
+              className={styles.workerCard}
+              onClick={() => setWorkerModalOpen(true)}
+            >
+              <span className={styles.workerIcon} aria-hidden="true">👷</span>
+              <span className={styles.workerText}>
+                <b>Worker: {query.trim()}</b>
+                <span className={styles.workerHint}>
+                  {workerResult.groups.length} group{workerResult.groups.length === 1 ? "" : "s"} · tap for details
+                </span>
+              </span>
+            </button>
+          )}
+          {results.length === 0 && !workerResult && <div className={styles.empty}>No results</div>}
           {results.map((item) => (
             <button
               key={item.rowId}
@@ -147,6 +200,40 @@ export function ReviewSearch() {
               )}
             </button>
           ))}
+        </div>
+      )}
+
+      {workerModalOpen && workerResult && (
+        <div className={styles.workerOverlay} onClick={() => setWorkerModalOpen(false)}>
+          <div
+            className={styles.workerModalCard}
+            role="dialog"
+            aria-label="Worker summary"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.workerModalTitle}>👷 {query.trim()}</div>
+            <div className={styles.workerGroups}>
+              {workerResult.groups.map(({ group, counts }) => (
+                <div key={group.id} className={styles.workerGroupRow}>
+                  <div className={styles.workerGroupName}>
+                    {group.archived && "📦 "}
+                    {group.name}
+                  </div>
+                  <CountPills counts={counts} />
+                </div>
+              ))}
+            </div>
+            <div className={styles.workerTotal}>
+              <div className={styles.workerTotalLabel}>Total · {workerResult.clients} clients</div>
+              <CountPills counts={workerResult.totals} large />
+            </div>
+            <div className={styles.workerNote}>
+              Numbers are per group — a group with two workers counts both.
+            </div>
+            <button type="button" className={styles.workerClose} onClick={() => setWorkerModalOpen(false)}>
+              Close
+            </button>
+          </div>
         </div>
       )}
     </div>

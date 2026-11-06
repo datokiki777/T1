@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, cleanup, within, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, cleanup, within, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "../../App";
+import { useAppStore } from "../../app/store";
+import type { DoneStatus } from "../../shared/types/domain";
 import { resetAppForTest, openGroupMenu, expandFirstPeriod, mockModalPrompt, mockModalConfirm } from "../../test/resetAppForTest";
 
 async function setupOneClient(user: ReturnType<typeof userEvent.setup>) {
@@ -542,5 +544,139 @@ describe("Review/Search module — matches the old app's search behavior", () =>
     const calendarIcon = await screen.findByRole("button", { name: "View visit date and days" });
     await user.click(calendarIcon);
     expect(screen.getByText("No visit date set for this client.")).toBeInTheDocument();
+  });
+});
+
+describe("Review/Search — typed text is also tried as a worker name (info-only summary)", () => {
+  beforeEach(async () => {
+    await resetAppForTest();
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  async function seedGroup(name: string, statuses: DoneStatus[], archived = false) {
+    await act(async () => {
+      const group = await useAppStore.getState().addGroup(name);
+      const period = await useAppStore.getState().addPeriod(group.id);
+      for (let i = 0; i < statuses.length; i++) {
+        const row = await useAppStore.getState().addClientRow(period.id);
+        useAppStore.getState().updateClientRow(row.id, { status: statuses[i], customer: `Client ${name.length}-${i}` });
+      }
+      if (archived) useAppStore.getState().toggleArchiveGroup(group.id);
+    });
+  }
+
+  async function openReviewAndType(user: ReturnType<typeof userEvent.setup>, text: string) {
+    await user.click(screen.getByRole("tab", { name: "Review" }));
+    await user.type(screen.getByPlaceholderText(/Search client/), text);
+  }
+
+  async function setupTwoGiorgis() {
+    render(<App />);
+    await screen.findByText("Select group");
+    await seedGroup("Giorgi Elibo", ["done", "done", "done", "fail", "fixed"]);
+    await seedGroup("Giorgi Ekima", ["done", "wrong", "wrong", "unpaid"], true); // archived
+    await seedGroup("Dato Rati", ["done", "done"]);
+  }
+
+  it("shows a worker card for text matching group names — across active AND archived — and its modal lists those groups with per-group and total Done/Fail/Fixed/Wrong", async () => {
+    const user = userEvent.setup();
+    await setupTwoGiorgis();
+    await openReviewAndType(user, "giorgi");
+
+    const card = await screen.findByRole("button", { name: /Worker: giorgi/ });
+    expect(card).toHaveTextContent("2 groups");
+    await user.click(card);
+
+    const dialog = await screen.findByRole("dialog", { name: "Worker summary" });
+    const elibo = within(dialog).getByText("Giorgi Elibo").parentElement as HTMLElement;
+    expect(within(elibo).getByText("Done 3")).toBeInTheDocument();
+    expect(within(elibo).getByText("Fail 1")).toBeInTheDocument();
+    expect(within(elibo).getByText("Fixed 1")).toBeInTheDocument();
+    expect(within(elibo).getByText("Wrong 0")).toBeInTheDocument();
+
+    // The archived group is included, and marked as archived.
+    const ekima = within(dialog).getByText("📦 Giorgi Ekima").parentElement as HTMLElement;
+    expect(within(ekima).getByText("Done 1")).toBeInTheDocument();
+    expect(within(ekima).getByText("Wrong 2")).toBeInTheDocument();
+    expect(within(ekima).getByText("Unpaid 1")).toBeInTheDocument(); // this app tracks a fifth status too
+    expect(within(elibo).getByText("Unpaid 0")).toBeInTheDocument();
+
+    // Dato Rati doesn't match, so it's not in the list or the totals.
+    expect(within(dialog).queryByText("Dato Rati")).not.toBeInTheDocument();
+    const totalBox = within(dialog).getByText(/^Total ·/).parentElement as HTMLElement;
+    expect(within(totalBox).getByText(/9 clients/)).toBeInTheDocument();
+    expect(within(totalBox).getByText("Done 4")).toBeInTheDocument();
+    expect(within(totalBox).getByText("Fail 1")).toBeInTheDocument();
+    expect(within(totalBox).getByText("Fixed 1")).toBeInTheDocument();
+    expect(within(totalBox).getByText("Wrong 2")).toBeInTheDocument();
+    expect(within(totalBox).getByText("Unpaid 1")).toBeInTheDocument();
+  });
+
+  it("a more specific name narrows it to just that worker's group", async () => {
+    const user = userEvent.setup();
+    await setupTwoGiorgis();
+    await openReviewAndType(user, "elibo");
+
+    const card = await screen.findByRole("button", { name: /Worker: elibo/ });
+    expect(card).toHaveTextContent("1 group");
+    expect(card).not.toHaveTextContent("1 groups");
+    await user.click(card);
+    const dialog = await screen.findByRole("dialog", { name: "Worker summary" });
+    expect(within(dialog).getByText("Giorgi Elibo")).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Ekima/)).not.toBeInTheDocument();
+  });
+
+  it("is informational only — the modal closes via Close or tapping outside, and nothing navigates anywhere", async () => {
+    const user = userEvent.setup();
+    await setupTwoGiorgis();
+    await openReviewAndType(user, "giorgi");
+    await user.click(await screen.findByRole("button", { name: /Worker: giorgi/ }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Worker summary" });
+    await user.click(within(dialog).getByText("Giorgi Elibo")); // tapping a group row does nothing
+    expect(screen.getByRole("dialog", { name: "Worker summary" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Review", selected: true })).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog", { name: "Worker summary" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Worker: giorgi/ }));
+    const overlay = (await screen.findByRole("dialog", { name: "Worker summary" })).parentElement as HTMLElement;
+    await user.click(overlay);
+    expect(screen.queryByRole("dialog", { name: "Worker summary" })).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Review", selected: true })).toBeInTheDocument();
+  });
+
+  it("no worker card when the text matches no group name (client search is unaffected), or when it's under 2 characters", async () => {
+    const user = userEvent.setup();
+    await setupTwoGiorgis();
+    await user.click(screen.getByRole("tab", { name: "Review" }));
+    const input = screen.getByPlaceholderText(/Search client/);
+
+    await user.type(input, "zzzz");
+    expect(await screen.findByText("No results")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Worker:/ })).not.toBeInTheDocument();
+
+    await user.clear(input);
+    await user.type(input, "g");
+    expect(screen.queryByRole("button", { name: /Worker:/ })).not.toBeInTheDocument();
+  });
+
+  it("a worker match with no matching clients shows the card instead of 'No results'; changing the text closes an open summary", async () => {
+    const user = userEvent.setup();
+    await setupTwoGiorgis();
+    await openReviewAndType(user, "giorgi"); // no client is named Giorgi
+
+    expect(await screen.findByRole("button", { name: /Worker: giorgi/ })).toBeInTheDocument();
+    expect(screen.queryByText("No results")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Worker: giorgi/ }));
+    await screen.findByRole("dialog", { name: "Worker summary" });
+    fireEvent.change(screen.getByPlaceholderText(/Search client/), { target: { value: "giorgi e" } });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Worker summary" })).not.toBeInTheDocument());
   });
 });
