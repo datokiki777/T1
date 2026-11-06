@@ -201,6 +201,9 @@
   overflow-y: auto;
   min-height: 0;
   flex: 1;
+  /* Reaching the end of this list stops there — it doesn't carry on and
+     scroll the page behind the modal. */
+  overscroll-behavior: contain;
 }
 
 .workerGroupRow {
